@@ -1,0 +1,23 @@
+{
+  "name": "@m234/logger",
+  "description": "Colorful logger with the ability to log processing...done messages.",
+  "version": "0.0.1",
+  "lint": {
+    "rules": {
+      "tags": ["jsr"]
+    }
+  },
+  "license": "MIT",
+  "publish": {
+    "include": [
+      "main.ts"
+    ]
+  },
+  "exports": {
+    ".": "./main.ts"
+  },
+  "imports": {
+    "@std/assert": "jsr:@std/assert@^1.0.12",
+    "@std/fmt": "jsr:@std/fmt@^1.0.6"
+  }
+}
