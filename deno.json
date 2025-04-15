@@ -1,7 +1,7 @@
 {
   "name": "@m234/logger",
   "description": "Colorful logger with the ability to log processing...done messages.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "lint": {
     "rules": {
       "tags": ["jsr"]
