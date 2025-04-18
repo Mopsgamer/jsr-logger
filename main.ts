@@ -17,12 +17,20 @@ export type LoggerState =
 
 /**
  * Enum representing the end states of the logger.
- * Excludes "started" and "idle" states.
  */
 export type LoggerStateEnd = Exclude<LoggerState, LoggerStateStart>;
 
+/**
+ * Logger class for formatted console output.
+ */
 export class Logger {
+  /**
+   * A string to prefix all log messages. Wrapped in square brackets.
+   */
   private prefix: string;
+  /**
+   * The current state of the continuous log.
+   */
   #state: LoggerState = "idle";
 
   /**
@@ -33,11 +41,14 @@ export class Logger {
     return this.#state;
   }
 
+  /**
+   * The arguments passed to the start method.
+   */
   private startedArgs: unknown[] = [];
 
   /**
    * Creates a new Logger instance.
-   * @param prefix - A string to prefix all log messages. Defaults to an empty string.
+   * @param prefix - A string to prefix all log messages.
    */
   constructor(prefix: string) {
     this.prefix = `[${prefix}]`;
@@ -58,7 +69,7 @@ export class Logger {
   }
 
   /**
-   * Prints a message to the console. Ends any ongoing log operation if necessary.
+   * Prints a message to the console. Ends any ongoing continuous log as a success.
    * @param message - The message to print.
    */
   print(message: string) {
@@ -91,7 +102,7 @@ export class Logger {
   }
 
   /**
-   * Logs an error message. Ends any ongoing log operation as a failure.
+   * Logs an error message. Ends any ongoing continuous log as a failure.
    * @param args - The message and optional arguments to log.
    */
   error(...args: unknown[]) {
@@ -127,7 +138,8 @@ export class Logger {
   }
 
   /**
-   * Starts a log operation, printing a message with an ellipsis.
+   * Starts a continuous log, printing a message with an ellipsis.
+   * Can be ended by the `end` and other log-methods such as `info` and `error`.
    * @param args - The message and optional arguments to log.
    */
   start(...args: unknown[]) {
@@ -139,9 +151,9 @@ export class Logger {
   }
 
   /**
-   * Ends a log operation, marking it as completed, aborted, or failed.
-   * Ignored if the logger is not in the "started" state.
-   * @param stateEnd - The end state of the operation. Defaults to "completed".
+   * Ends any ongoing continuous log, marking it as completed, aborted, or failed.
+   * Ignored if the `start` method was not called.
+   * @param stateEnd - The end state of the continuous log. Defaults to "completed".
    */
   end(stateEnd?: LoggerStateEnd) {
     if (this.#state !== "started") return;
