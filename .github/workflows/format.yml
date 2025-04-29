@@ -8,11 +8,13 @@ jobs:
   format-code:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
       - name: Checking Deno
         run: |
+          deno install --allow-scripts
           deno lint
           deno fmt --check
           deno check .
