@@ -15,8 +15,6 @@ jobs:
         run: |
           deno install --allow-scripts
           deno lint
-          deno fmt
           deno fmt --check
           deno check .
           deno test
-          deno task badge:tests
