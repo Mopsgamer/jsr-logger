@@ -112,7 +112,7 @@ export class Logger {
    * @param args - The message and optional arguments to log.
    */
   info(...args: unknown[]) {
-    const prefix = `${blue("ⓘ " + this.prefix)}`;
+    const prefix = blue("ⓘ " + this.prefix);
     this.println(`${prefix} ${this.format(...args)}`);
   }
 
@@ -125,7 +125,7 @@ export class Logger {
       this.end("failed");
     }
 
-    const prefix = `${red("✖ " + this.prefix)}`;
+    const prefix = red("✖ " + this.prefix);
     this.println(`${prefix} ${this.format(...args)}`);
   }
 
@@ -134,7 +134,7 @@ export class Logger {
    * @param args - The message and optional arguments to log.
    */
   warn(...args: unknown[]) {
-    const prefix = `${yellow("⚠ " + this.prefix)}`;
+    const prefix = yellow("⚠ " + this.prefix);
     this.println(`${prefix} ${this.format(...args)}`);
   }
 
@@ -147,7 +147,7 @@ export class Logger {
       this.end("completed");
     }
 
-    const prefix = `${green("✔ " + this.prefix)}`;
+    const prefix = green("✔ " + this.prefix);
     this.println(`${prefix} ${this.format(...args)}`);
   }
 
@@ -158,7 +158,7 @@ export class Logger {
    */
   start(...args: unknown[]) {
     this.startedArgs = args;
-    const prefix = `${magenta("- " + this.prefix)}`;
+    const prefix = magenta("- " + this.prefix);
     this.print(`${prefix} ${this.format(...args)}...`);
     this.#state = "started";
   }
