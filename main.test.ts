@@ -12,7 +12,10 @@ Deno.test("Logger.format logs args right", () => {
   assertEquals(logger.format([]), ``);
 });
 
-function expectOutput(startup: () => void, ...lineList: (string | undefined)[]) {
+function expectOutput(
+  startup: () => void,
+  ...lineList: (string | undefined)[]
+) {
   const output: string[] = [];
   const originalWrite = process.stdout.write;
   process.stdout.write = (data: string): boolean => {
