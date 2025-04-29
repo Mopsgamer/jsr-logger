@@ -1,5 +1,5 @@
 import { sprintf } from "@std/fmt/printf";
-import { blue, gray, green, magenta, red, yellow } from "@std/fmt/colors";
+import { blue, green, magenta, red, yellow, bold } from "@std/fmt/colors";
 import process from "node:process";
 
 /**
@@ -180,7 +180,7 @@ export class Logger {
         break;
       case "aborted":
         message = "aborted";
-        color = gray;
+        color = yellow;
         break;
       default:
         message = "done";
@@ -188,9 +188,9 @@ export class Logger {
         break;
     }
     this.printf(
-      `\r${color("-")} ${color(this.prefix)} ${
+      `\r${color("- "+this.prefix)} ${
         this.format(...this.startedArgs)
-      }...${color(message)}\n`,
+      }...${bold(color(message))}\n`,
     );
   }
 }
