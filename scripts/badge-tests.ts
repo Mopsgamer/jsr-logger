@@ -2,7 +2,10 @@ import { makeBadge } from "badge-maker";
 import { stripAnsiCode } from "@std/fmt/colors";
 import { existsSync } from "node:fs";
 
-await new Deno.Command("deno", { args: ["test", "-q"], stdout: "null" })
+await new Deno.Command("deno", {
+  args: ["test", "--coverage", "--clean", "-q"],
+  stdout: "null",
+})
   .output();
 
 const outputCov = new TextDecoder().decode(

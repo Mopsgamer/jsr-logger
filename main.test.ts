@@ -12,8 +12,7 @@ Deno.test("Logger.format logs args right", () => {
   assertEquals(logger.format([]), ``);
 });
 
-Deno.test("Logger.info logs informational messages", () => {
-  const logger = new Logger("TestApp");
+function expectOutput(startup: () => void, ...lineList: (string | undefined)[]) {
   const output: string[] = [];
   const originalWrite = process.stdout.write;
   process.stdout.write = (data: string): boolean => {
@@ -22,161 +21,160 @@ Deno.test("Logger.info logs informational messages", () => {
   };
 
   try {
-    logger.info("This is an informational message.");
-    assertEquals(
-      output[0],
-      `${blue("ⓘ [TestApp]")} This is an informational message.\n`,
-    );
+    startup();
+    for (const [i, line] of lineList.entries()) {
+      assertEquals(output[i], line);
+    }
   } finally {
     process.stdout.write = originalWrite;
   }
+}
+
+Deno.test("Logger.info logs informational messages", () => {
+  expectOutput(
+    () => {
+      const logger = new Logger("TestApp");
+      logger.info("This is an informational message.");
+    },
+    `${blue("ⓘ [TestApp]")} This is an informational message.\n`,
+  );
 });
 
 Deno.test("Logger.warn logs warning messages", () => {
-  const logger = new Logger("TestApp");
-  const output: string[] = [];
-  const originalWrite = process.stdout.write;
-  process.stdout.write = (data: string): boolean => {
-    output.push(data);
-    return true;
-  };
-
-  try {
-    logger.warn("This is a warning.");
-    assertEquals(
-      output[0],
-      `${yellow("⚠ [TestApp]")} This is a warning.\n`,
-    );
-  } finally {
-    process.stdout.write = originalWrite;
-  }
+  expectOutput(
+    () => {
+      const logger = new Logger("TestApp");
+      logger.warn("This is a warning.");
+    },
+    `${yellow("⚠ [TestApp]")} This is a warning.\n`,
+  );
 });
 
 Deno.test("Logger.error logs error messages", () => {
-  const logger = new Logger("TestApp");
-  const output: string[] = [];
-  const originalWrite = process.stdout.write;
-  process.stdout.write = (data: string): boolean => {
-    output.push(data);
-    return true;
-  };
+  expectOutput(
+    () => {
+      const logger = new Logger("TestApp");
+      logger.error("This is an error.");
+    },
+    `${red("✖ [TestApp]")} This is an error.\n`,
+  );
+});
 
-  try {
-    logger.error("This is an error.");
-    assertEquals(
-      output[0],
-      `${red("✖ [TestApp]")} This is an error.\n`,
-    );
-  } finally {
-    process.stdout.write = originalWrite;
-  }
+Deno.test("Logger.error logs error messages", () => {
+  expectOutput(
+    () => {
+      const logger = new Logger("TestApp");
+      logger.start("Never");
+      logger.error("This is an error.");
+    },
+    `${magenta("- [TestApp]")} Never...`,
+    `\r${red("- [TestApp]")} Never...${bold(red("failed"))}\n`,
+    `${red("✖ [TestApp]")} This is an error.\n`,
+  );
 });
 
 Deno.test("Logger.success logs success messages", () => {
-  const logger = new Logger("TestApp");
-  const output: string[] = [];
-  const originalWrite = process.stdout.write;
-  process.stdout.write = (data: string): boolean => {
-    output.push(data);
-    return true;
-  };
+  expectOutput(
+    () => {
+      const logger = new Logger("TestApp");
+      logger.success("This is a success message.");
+    },
+    `${green("✔ [TestApp]")} This is a success message.\n`,
+  );
+});
 
-  try {
-    logger.success("This is a success message.");
-    assertEquals(
-      output[0],
-      `${green("✔ [TestApp]")} This is a success message.\n`,
-    );
-  } finally {
-    process.stdout.write = originalWrite;
-  }
+Deno.test("Logger.end should be ignored if not started", () => {
+  expectOutput(
+    () => {
+      const logger = new Logger("TestApp");
+      logger.end();
+    },
+    undefined,
+  );
 });
 
 Deno.test("Logger.printf logs formatted args", () => {
-  const logger = new Logger("TestApp");
-  const output: string[] = [];
-  const originalWrite = process.stdout.write;
-  process.stdout.write = (data: string): boolean => {
-    output.push(data);
-    return true;
-  };
-
-  try {
-    logger.printf("Good %s.", "grief");
-    assertEquals(
-      output[0],
-      `Good grief.`,
-    );
-  } finally {
-    process.stdout.write = originalWrite;
-  }
+  expectOutput(
+    () => {
+      const logger = new Logger("TestApp");
+      logger.printf("Good %s.", "grief");
+    },
+    `Good grief.`,
+  );
 });
 
-Deno.test("Logger.start and end continuous log", () => {
-  const logger = new Logger("TestApp");
-  const output: string[] = [];
-  const originalWrite = process.stdout.write;
-  process.stdout.write = (data: string): boolean => {
-    output.push(data);
-    return true;
-  };
+Deno.test("Logger.printfln logs with a new line", () => {
+  expectOutput(
+    () => {
+      const logger = new Logger("TestApp");
+      logger.printfln("Good %s.", "grief");
+    },
+    `Good grief.\n`,
+  );
+});
 
-  try {
-    logger.start("Operating");
-    logger.end("completed");
-    assertEquals(logger.state, "completed");
-    assertEquals(
-      output[0],
-      `${magenta("- [TestApp]")} Operating...`,
-    );
-    assertEquals(
-      output[1],
-      `\r${green("- [TestApp]")} Operating...${bold(green("done"))}\n`,
-    );
-    output.length = 0;
+Deno.test("Logger.start can be completed", () => {
+  expectOutput(
+    () => {
+      const logger = new Logger("TestApp");
+      logger.start("Operating");
+      logger.end("completed");
+      assertEquals(logger.state, "completed");
+    },
+    `${magenta("- [TestApp]")} Operating...`,
+    `\r${green("- [TestApp]")} Operating...${bold(green("done"))}\n`,
+  );
+});
 
-    logger.start("Operating");
-    logger.end("failed");
-    assertEquals(logger.state, "failed");
-    assertEquals(
-      output[0],
-      `${magenta("- [TestApp]")} Operating...`,
-    );
-    assertEquals(
-      output[1],
-      `\r${red("- [TestApp]")} Operating...${bold(red("failed"))}\n`,
-    );
+Deno.test("Logger.start can be failed", () => {
+  expectOutput(
+    () => {
+      const logger = new Logger("TestApp");
+      logger.start("Operating");
+      logger.end("failed");
+      assertEquals(logger.state, "failed");
+    },
+    `${magenta("- [TestApp]")} Operating...`,
+    `\r${red("- [TestApp]")} Operating...${bold(red("failed"))}\n`,
+  );
+});
 
-    output.length = 0;
+Deno.test("Logger.start can be aborted", () => {
+  expectOutput(
+    () => {
+      const logger = new Logger("TestApp");
+      logger.start("Operating");
+      logger.end("aborted");
+      assertEquals(logger.state, "aborted");
+    },
+    `${magenta("- [TestApp]")} Operating...`,
+    `\r${yellow("- [TestApp]")} Operating...${bold(yellow("aborted"))}\n`,
+  );
+});
 
-    logger.start("Operating");
-    logger.success("Succ");
-    assertEquals(logger.state, "completed");
-    assertEquals(
-      output[0],
-      `${magenta("- [TestApp]")} Operating...`,
-    );
-    assertEquals(
-      output[1],
-      `\r${green("- [TestApp]")} Operating...${bold(green("done"))}\n`,
-    );
-    assertEquals(output[2], `${green("✔ [TestApp]")} Succ\n`);
+Deno.test("Logger.start can be completed with Logger.success", () => {
+  expectOutput(
+    () => {
+      const logger = new Logger("TestApp");
+      logger.start("Operating");
+      logger.success("Succ");
+      assertEquals(logger.state, "completed");
+    },
+    `${magenta("- [TestApp]")} Operating...`,
+    `\r${green("- [TestApp]")} Operating...${bold(green("done"))}\n`,
+  );
+});
 
-    output.length = 0;
-
-    logger.start("Operating");
-    logger.info("test");
-    assertEquals(logger.state, "completed");
-    assertEquals(
-      output[0],
-      `${magenta("- [TestApp]")} Operating...`,
-    );
-    assertEquals(
-      output[1],
-      `\r${green("- [TestApp]")} Operating...${bold(green("done"))}\n`,
-    );
-    assertEquals(output[2], `${blue("ⓘ [TestApp]")} test\n`);
-  } finally {
-    process.stdout.write = originalWrite;
-  }
+Deno.test("Logger.start can be completed with Logger.info", () => {
+  expectOutput(
+    () => {
+      const logger = new Logger("TestApp");
+      logger.start("Operating");
+      logger.info("test");
+      assertEquals(logger.state, "completed");
+    },
+    `${magenta("- [TestApp]")} Operating...`,
+    `\r${green("- [TestApp]")} Operating...${bold(green("done"))}\n`,
+    `${blue("ⓘ [TestApp]")} test\n`,
+  );
 });

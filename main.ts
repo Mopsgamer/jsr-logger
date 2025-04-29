@@ -172,7 +172,9 @@ export class Logger {
     if (this.#state !== "started") return;
     stateEnd ??= "completed";
     this.#state = stateEnd;
-    let message: string, color: (str: string) => string;
+
+    let message: string;
+    let color: (message: string) => string;
     switch (stateEnd) {
       case "failed":
         message = "failed";
@@ -187,10 +189,10 @@ export class Logger {
         color = green;
         break;
     }
-    this.printf(
-      `\r${color("- " + this.prefix)} ${this.format(...this.startedArgs)}...${
-        bold(color(message))
-      }\n`,
-    );
+
+    const prefix = color("- " + this.prefix);
+    const text = this.format(...this.startedArgs);
+    const result = bold(color(message));
+    this.printfln(`\r${prefix} ${text}...${result}`);
   }
 }
