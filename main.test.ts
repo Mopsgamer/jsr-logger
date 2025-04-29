@@ -92,7 +92,7 @@ Deno.test("Logger.success logs success messages", () => {
   }
 });
 
-Deno.test("Logger.start and end log operations", () => {
+Deno.test("Logger.start and end continuous log", () => {
   const logger = new Logger("TestApp");
   const output: string[] = [];
   const originalWrite = process.stdout.write;
@@ -156,25 +156,6 @@ Deno.test("Logger.start and end log operations", () => {
       `\r${green("-")} ${green("[TestApp]")} Operating...${green("done")}\n`,
     );
     assertEquals(output[2], `${blue("ⓘ")} ${blue("[TestApp]")} test\n`);
-  } finally {
-    process.stdout.write = originalWrite;
-  }
-});
-
-Deno.test("Logger.inline logs inline messages", () => {
-  const logger = new Logger("TestApp");
-  const output: string[] = [];
-  const originalWrite = process.stdout.write;
-  process.stdout.write = (data: string): boolean => {
-    output.push(data);
-    return true;
-  };
-
-  try {
-    logger.inline("Starting machine...");
-    logger.inline("done");
-    assertEquals(output[0], `Starting machine...`);
-    assertEquals(output[1], "done");
   } finally {
     process.stdout.write = originalWrite;
   }

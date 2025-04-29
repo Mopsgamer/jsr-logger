@@ -1,5 +1,8 @@
 # @m234/logger
 
+[![JSR](https://jsr.io/badges/@m234/logger)](https://jsr.io/@m234/logger)
+![Tests](./assets/badge-tests.svg) ![Tests coverage](./assets/badge-cov.svg)
+
 Colorful logger with the ability to log operating...done messages.
 
 ## Usage
