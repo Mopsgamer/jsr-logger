@@ -1,4 +1,4 @@
-import { blue, green, magenta, red, yellow } from "@std/fmt/colors";
+import { blue, bold, green, magenta, red, yellow } from "@std/fmt/colors";
 import { Logger } from "./main.ts";
 import { assertEquals } from "@std/assert";
 import process from "node:process";
@@ -25,7 +25,7 @@ Deno.test("Logger.info logs informational messages", () => {
     logger.info("This is an informational message.");
     assertEquals(
       output[0],
-      `${blue("ⓘ")} ${blue("[TestApp]")} This is an informational message.\n`,
+      `${blue("ⓘ [TestApp]")} This is an informational message.\n`,
     );
   } finally {
     process.stdout.write = originalWrite;
@@ -45,7 +45,7 @@ Deno.test("Logger.warn logs warning messages", () => {
     logger.warn("This is a warning.");
     assertEquals(
       output[0],
-      `${yellow("⚠")} ${yellow("[TestApp]")} This is a warning.\n`,
+      `${yellow("⚠ [TestApp]")} This is a warning.\n`,
     );
   } finally {
     process.stdout.write = originalWrite;
@@ -65,7 +65,7 @@ Deno.test("Logger.error logs error messages", () => {
     logger.error("This is an error.");
     assertEquals(
       output[0],
-      `${red("✖")} ${red("[TestApp]")} This is an error.\n`,
+      `${red("✖ [TestApp]")} This is an error.\n`,
     );
   } finally {
     process.stdout.write = originalWrite;
@@ -85,7 +85,7 @@ Deno.test("Logger.success logs success messages", () => {
     logger.success("This is a success message.");
     assertEquals(
       output[0],
-      `${green("✔")} ${green("[TestApp]")} This is a success message.\n`,
+      `${green("✔ [TestApp]")} This is a success message.\n`,
     );
   } finally {
     process.stdout.write = originalWrite;
@@ -127,11 +127,11 @@ Deno.test("Logger.start and end continuous log", () => {
     assertEquals(logger.state, "completed");
     assertEquals(
       output[0],
-      `${magenta("-")} ${magenta("[TestApp]")} Operating...`,
+      `${magenta("- [TestApp]")} Operating...`,
     );
     assertEquals(
       output[1],
-      `\r${green("-")} ${green("[TestApp]")} Operating...${green("done")}\n`,
+      `\r${green("- [TestApp]")} Operating...${bold(green("done"))}\n`,
     );
     output.length = 0;
 
@@ -140,11 +140,11 @@ Deno.test("Logger.start and end continuous log", () => {
     assertEquals(logger.state, "failed");
     assertEquals(
       output[0],
-      `${magenta("-")} ${magenta("[TestApp]")} Operating...`,
+      `${magenta("- [TestApp]")} Operating...`,
     );
     assertEquals(
       output[1],
-      `\r${red("-")} ${red("[TestApp]")} Operating...${red("failed")}\n`,
+      `\r${red("- [TestApp]")} Operating...${bold(red("failed"))}\n`,
     );
 
     output.length = 0;
@@ -154,13 +154,13 @@ Deno.test("Logger.start and end continuous log", () => {
     assertEquals(logger.state, "completed");
     assertEquals(
       output[0],
-      `${magenta("-")} ${magenta("[TestApp]")} Operating...`,
+      `${magenta("- [TestApp]")} Operating...`,
     );
     assertEquals(
       output[1],
-      `\r${green("-")} ${green("[TestApp]")} Operating...${green("done")}\n`,
+      `\r${green("- [TestApp]")} Operating...${bold(green("done"))}\n`,
     );
-    assertEquals(output[2], `${green("✔")} ${green("[TestApp]")} Succ\n`);
+    assertEquals(output[2], `${green("✔ [TestApp]")} Succ\n`);
 
     output.length = 0;
 
@@ -169,13 +169,13 @@ Deno.test("Logger.start and end continuous log", () => {
     assertEquals(logger.state, "completed");
     assertEquals(
       output[0],
-      `${magenta("-")} ${magenta("[TestApp]")} Operating...`,
+      `${magenta("- [TestApp]")} Operating...`,
     );
     assertEquals(
       output[1],
-      `\r${green("-")} ${green("[TestApp]")} Operating...${green("done")}\n`,
+      `\r${green("- [TestApp]")} Operating...${bold(green("done"))}\n`,
     );
-    assertEquals(output[2], `${blue("ⓘ")} ${blue("[TestApp]")} test\n`);
+    assertEquals(output[2], `${blue("ⓘ [TestApp]")} test\n`);
   } finally {
     process.stdout.write = originalWrite;
   }

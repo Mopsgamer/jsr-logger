@@ -1,5 +1,5 @@
 import { sprintf } from "@std/fmt/printf";
-import { blue, green, magenta, red, yellow, bold } from "@std/fmt/colors";
+import { blue, bold, green, magenta, red, yellow } from "@std/fmt/colors";
 import process from "node:process";
 
 /**
@@ -188,9 +188,9 @@ export class Logger {
         break;
     }
     this.printf(
-      `\r${color("- "+this.prefix)} ${
-        this.format(...this.startedArgs)
-      }...${bold(color(message))}\n`,
+      `\r${color("- " + this.prefix)} ${this.format(...this.startedArgs)}...${
+        bold(color(message))
+      }\n`,
     );
   }
 }
