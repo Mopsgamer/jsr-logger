@@ -41,7 +41,8 @@ logger.end(); // clears the line
 // ✔ [MyApp] Operating...done
 ```
 
-The `error`, `success`, `info`, `warn` methods can be used to end a continuous log. All except `error` will end the continuous log as completed:
+The `error`, `success`, `info`, `warn` methods can be used to end a continuous
+log. All except `error` will end the continuous log as completed:
 
 ```ts
 import { Logger } from "@m234/logger";
@@ -55,6 +56,6 @@ logger.end("completed"); // ignored
 ```
 
 > [!WARNING]
-> `logger.end` will <u>**not**</u> automatically called
-> before `console.log` and `stdout/stderr.write`.
-> Please, use `logger.end` and other log-methods to end the continuous log.
+> `logger.end` will <u>**not**</u> automatically called before `console.log` and
+> `stdout/stderr.write`. Please, use `logger.end` and other log-methods to end
+> the continuous log.

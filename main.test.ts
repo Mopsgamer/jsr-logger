@@ -1,6 +1,7 @@
 import { blue, green, magenta, red, yellow } from "@std/fmt/colors";
 import { Logger } from "./main.ts";
 import { assertEquals } from "@std/assert";
+import process from "node:process";
 
 Deno.test("Logger.format logs args right", () => {
   const logger = new Logger("TestApp");
@@ -14,10 +15,10 @@ Deno.test("Logger.format logs args right", () => {
 Deno.test("Logger.info logs informational messages", () => {
   const logger = new Logger("TestApp");
   const output: string[] = [];
-  const originalWrite = Deno.stdout.write;
-  Deno.stdout.write = (data: Uint8Array): Promise<number> => {
-    output.push(new TextDecoder().decode(data));
-    return Promise.resolve(data.byteLength);
+  const originalWrite = process.stdout.write;
+  process.stdout.write = (data: string): boolean => {
+    output.push(data);
+    return true;
   };
 
   try {
@@ -27,17 +28,17 @@ Deno.test("Logger.info logs informational messages", () => {
       `${blue("ⓘ")} ${blue("[TestApp]")} This is an informational message.\n`,
     );
   } finally {
-    Deno.stdout.write = originalWrite;
+    process.stdout.write = originalWrite;
   }
 });
 
 Deno.test("Logger.warn logs warning messages", () => {
   const logger = new Logger("TestApp");
   const output: string[] = [];
-  const originalWrite = Deno.stdout.write;
-  Deno.stdout.write = (data: Uint8Array): Promise<number> => {
-    output.push(new TextDecoder().decode(data));
-    return Promise.resolve(data.byteLength);
+  const originalWrite = process.stdout.write;
+  process.stdout.write = (data: string): boolean => {
+    output.push(data);
+    return true;
   };
 
   try {
@@ -47,17 +48,17 @@ Deno.test("Logger.warn logs warning messages", () => {
       `${yellow("⚠")} ${yellow("[TestApp]")} This is a warning.\n`,
     );
   } finally {
-    Deno.stdout.write = originalWrite;
+    process.stdout.write = originalWrite;
   }
 });
 
 Deno.test("Logger.error logs error messages", () => {
   const logger = new Logger("TestApp");
   const output: string[] = [];
-  const originalWrite = Deno.stdout.write;
-  Deno.stdout.write = (data: Uint8Array): Promise<number> => {
-    output.push(new TextDecoder().decode(data));
-    return Promise.resolve(data.byteLength);
+  const originalWrite = process.stdout.write;
+  process.stdout.write = (data: string): boolean => {
+    output.push(data);
+    return true;
   };
 
   try {
@@ -67,17 +68,17 @@ Deno.test("Logger.error logs error messages", () => {
       `${red("✖")} ${red("[TestApp]")} This is an error.\n`,
     );
   } finally {
-    Deno.stdout.write = originalWrite;
+    process.stdout.write = originalWrite;
   }
 });
 
 Deno.test("Logger.success logs success messages", () => {
   const logger = new Logger("TestApp");
   const output: string[] = [];
-  const originalWrite = Deno.stdout.write;
-  Deno.stdout.write = (data: Uint8Array): Promise<number> => {
-    output.push(new TextDecoder().decode(data));
-    return Promise.resolve(data.byteLength);
+  const originalWrite = process.stdout.write;
+  process.stdout.write = (data: string): boolean => {
+    output.push(data);
+    return true;
   };
 
   try {
@@ -87,17 +88,17 @@ Deno.test("Logger.success logs success messages", () => {
       `${green("✔")} ${green("[TestApp]")} This is a success message.\n`,
     );
   } finally {
-    Deno.stdout.write = originalWrite;
+    process.stdout.write = originalWrite;
   }
 });
 
 Deno.test("Logger.start and end log operations", () => {
   const logger = new Logger("TestApp");
   const output: string[] = [];
-  const originalWrite = Deno.stdout.write;
-  Deno.stdout.write = (data: Uint8Array): Promise<number> => {
-    output.push(new TextDecoder().decode(data));
-    return Promise.resolve(data.byteLength);
+  const originalWrite = process.stdout.write;
+  process.stdout.write = (data: string): boolean => {
+    output.push(data);
+    return true;
   };
 
   try {
@@ -156,17 +157,17 @@ Deno.test("Logger.start and end log operations", () => {
     );
     assertEquals(output[2], `${blue("ⓘ")} ${blue("[TestApp]")} test\n`);
   } finally {
-    Deno.stdout.write = originalWrite;
+    process.stdout.write = originalWrite;
   }
 });
 
 Deno.test("Logger.inline logs inline messages", () => {
   const logger = new Logger("TestApp");
   const output: string[] = [];
-  const originalWrite = Deno.stdout.write;
-  Deno.stdout.write = (data: Uint8Array): Promise<number> => {
-    output.push(new TextDecoder().decode(data));
-    return Promise.resolve(data.byteLength);
+  const originalWrite = process.stdout.write;
+  process.stdout.write = (data: string): boolean => {
+    output.push(data);
+    return true;
   };
 
   try {
@@ -175,6 +176,6 @@ Deno.test("Logger.inline logs inline messages", () => {
     assertEquals(output[0], `Starting machine...`);
     assertEquals(output[1], "done");
   } finally {
-    Deno.stdout.write = originalWrite;
+    process.stdout.write = originalWrite;
   }
 });
