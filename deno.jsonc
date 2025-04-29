@@ -1,7 +1,7 @@
 {
   "name": "@m234/logger",
   "description": "Colorful logger with the ability to log processing...done messages.",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "tasks": {
     "publish": "deno task badge:tests && deno fmt && deno test && deno lint && deno publish",
     "badge:tests": "deno run --allow-run=deno -R=assets -W=assets scripts/badge-tests.ts"

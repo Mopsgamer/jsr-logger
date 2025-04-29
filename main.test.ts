@@ -92,6 +92,26 @@ Deno.test("Logger.success logs success messages", () => {
   }
 });
 
+Deno.test("Logger.printf logs formatted args", () => {
+  const logger = new Logger("TestApp");
+  const output: string[] = [];
+  const originalWrite = process.stdout.write;
+  process.stdout.write = (data: string): boolean => {
+    output.push(data);
+    return true;
+  };
+
+  try {
+    logger.printf("Good %s.", "grief");
+    assertEquals(
+      output[0],
+      `Good grief.`,
+    );
+  } finally {
+    process.stdout.write = originalWrite;
+  }
+});
+
 Deno.test("Logger.start and end continuous log", () => {
   const logger = new Logger("TestApp");
   const output: string[] = [];

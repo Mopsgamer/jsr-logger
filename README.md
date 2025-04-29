@@ -21,14 +21,14 @@ logger.success("This is a success message.");
 // no 'log', 'debug' and 'verbose' methods
 ```
 
-Supports logging without new line and prefix:
+Supports logging without new line and prefix, but with a formatting:
 
 ```ts
 import { Logger } from "@m234/logger";
 
 const logger = new Logger("MyApp");
-logger.inline("Starting machine...");
-logger.inline("done\n");
+logger.printf("Starting %s...", "machine");
+logger.println("done");
 // Starting machine...done
 ```
 
