@@ -116,7 +116,7 @@ Deno.test("Logger.printfln logs with a new line", () => {
   );
 });
 
-Deno.test("Logger.start can be completed", () => {
+Deno.test("Logger.start is completed", () => {
   expectOutput(
     () => {
       const logger = new Logger("TestApp");
@@ -129,7 +129,7 @@ Deno.test("Logger.start can be completed", () => {
   );
 });
 
-Deno.test("Logger.start can be failed", () => {
+Deno.test("Logger.start is failed", () => {
   expectOutput(
     () => {
       const logger = new Logger("TestApp");
@@ -142,7 +142,7 @@ Deno.test("Logger.start can be failed", () => {
   );
 });
 
-Deno.test("Logger.start can be aborted", () => {
+Deno.test("Logger.start is aborted", () => {
   expectOutput(
     () => {
       const logger = new Logger("TestApp");
@@ -155,7 +155,7 @@ Deno.test("Logger.start can be aborted", () => {
   );
 });
 
-Deno.test("Logger.start can be completed with Logger.success", () => {
+Deno.test("Logger.start is completed with Logger.success", () => {
   expectOutput(
     () => {
       const logger = new Logger("TestApp");
@@ -168,7 +168,7 @@ Deno.test("Logger.start can be completed with Logger.success", () => {
   );
 });
 
-Deno.test("Logger.start can be completed with Logger.info", () => {
+Deno.test("Logger.start is completed with Logger.info", () => {
   expectOutput(
     () => {
       const logger = new Logger("TestApp");
@@ -179,5 +179,33 @@ Deno.test("Logger.start can be completed with Logger.info", () => {
     `${magenta("- [TestApp]")} Operating...`,
     `\r${green("- [TestApp]")} Operating...${bold(green("done"))}\n`,
     `${blue("ⓘ [TestApp]")} test\n`,
+  );
+});
+
+Deno.test("Logger.endDisposable should be completed", () => {
+  expectOutput(
+    () => {
+      const logger = new Logger("TestApp");
+      logger.start("Operating");
+      {
+        using operation = logger;
+      }
+      assertEquals(logger.state, "completed");
+    },
+    `${magenta("- [TestApp]")} Operating...`,
+    `\r${green("- [TestApp]")} Operating...${bold(green("done"))}\n`,
+  );
+});
+
+Deno.test("Logger.endDisposable should be completed after", () => {
+  expectOutput(
+    () => {
+      const logger = new Logger("TestApp");
+      logger.start("Operating");
+      using operation = logger;
+      assertEquals(logger.state, "started");
+    },
+    `${magenta("- [TestApp]")} Operating...`,
+    `\r${green("- [TestApp]")} Operating...${bold(green("done"))}\n`,
   );
 });

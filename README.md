@@ -3,11 +3,11 @@
 [![JSR](https://jsr.io/badges/@m234/logger)](https://jsr.io/@m234/logger)
 ![Tests](./assets/badge-tests.svg) ![Tests coverage](./assets/badge-cov.svg)
 
-Colorful logger with the ability to log operating...done messages.
+A colorful logger with the ability to log messages such as "processing...done".
 
 ## Usage
 
-Here's an example of how to use the Logger:
+Here is an example of how to use the Logger:
 
 ```ts
 import { Logger } from "@m234/logger";
@@ -18,10 +18,12 @@ logger.info("This is an informational message.");
 logger.warn("This is a warning.");
 logger.error("This is an error.");
 logger.success("This is a success message.");
-// no 'log', 'debug' and 'verbose' methods
+// Note: There are no 'log', 'debug', or 'verbose' methods.
 ```
 
-Supports logging without new line and prefix, but with a formatting:
+### Logging with Formatting
+
+You can log messages without a new line or prefix, but with formatting:
 
 ```ts
 import { Logger } from "@m234/logger";
@@ -29,36 +31,47 @@ import { Logger } from "@m234/logger";
 const logger = new Logger("MyApp");
 logger.printf("Starting %s...", "machine");
 logger.println("done");
-// Starting machine...done
+// Output: Starting machine...done
 ```
 
-Or you can use the `start` and `end` methods for more control:
+### Continuous Logging with `start` and `end`
+
+For more control, use the `start` and `end` methods:
 
 ```ts
 import { Logger } from "@m234/logger";
 
 const logger = new Logger("MyApp");
 logger.start("Operating");
-// ⓘ [MyApp] Operating...
-logger.end(); // clears the line
-// ✔ [MyApp] Operating...done
+// Output: ⓘ [MyApp] Operating...
+logger.end(); // Clears the line
+// Output: ✔ [MyApp] Operating...done
 ```
 
-The `error`, `success`, `info`, `warn` methods can be used to end a continuous
-log. All except `error` will end the continuous log as completed:
+The `error`, `success`, `info`, and `warn` methods can also be used to end a continuous log. All methods except `error` will mark the log as completed:
 
 ```ts
 import { Logger } from "@m234/logger";
 const logger = new Logger("MyApp");
 logger.start("Operating");
-// - [MyApp] Operating...
-logger.error("An error occurred"); // clears the line
-logger.end("completed"); // ignored
-// ✖ [MyApp] Operating...failed
-// ✖ [MyApp] An error occurred
+// Output: - [MyApp] Operating...
+logger.error("An error occurred"); // Clears the line
+logger.end("completed"); // Ignored
+// Output: ✖ [MyApp] Operating...failed
+// Output: ✖ [MyApp] An error occurred
 ```
 
-> [!WARNING]
-> `logger.end` will <u>**not**</u> automatically called before `console.log` and
-> `stdout/stderr.write`. Please, use `logger.end` and other log-methods to end
-> the continuous log.
+> **Warning**
+> `logger.end` will **not** be automatically called before `console.log` or `stdout/stderr.write`. Please ensure you use `logger.end` or other log methods to properly end a continuous log.
+
+### Automatic Cleanup with `logger[Symbol.dispose]`
+
+The Logger supports automatic cleanup using the `Symbol.dispose` method. This ensures that any ongoing continuous log is properly ended when the logger instance is disposed:
+
+```ts
+import { Logger } from "@m234/logger";
+
+using logger = new Logger("MyApp");
+logger.start("Operating");
+// Output: ✔ [MyApp] Operating...done
+```
