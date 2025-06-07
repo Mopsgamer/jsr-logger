@@ -12,7 +12,7 @@ Here is an example of how to use the Logger:
 ```ts
 import { Logger } from "@m234/logger";
 
-const logger = new Logger("MyApp");
+using logger = new Logger("MyApp");
 
 logger.info("This is an informational message.");
 logger.warn("This is a warning.");
@@ -28,7 +28,7 @@ You can log messages without a new line or prefix, but with formatting:
 ```ts
 import { Logger } from "@m234/logger";
 
-const logger = new Logger("MyApp");
+using logger = new Logger("MyApp");
 logger.printf("Starting %s...", "machine");
 logger.println("done");
 // Output: Starting machine...done
@@ -41,18 +41,19 @@ For more control, use the `start` and `end` methods:
 ```ts
 import { Logger } from "@m234/logger";
 
-const logger = new Logger("MyApp");
+using logger = new Logger("MyApp");
 logger.start("Operating");
 // Output: ⓘ [MyApp] Operating...
 logger.end(); // Clears the line
 // Output: ✔ [MyApp] Operating...done
 ```
 
-The `error`, `success`, `info`, and `warn` methods can also be used to end a continuous log. All methods except `error` will mark the log as completed:
+The `error`, `success`, `info`, and `warn` methods can also be used to end a
+continuous log. All methods except `error` will mark the log as completed:
 
 ```ts
 import { Logger } from "@m234/logger";
-const logger = new Logger("MyApp");
+using logger = new Logger("MyApp");
 logger.start("Operating");
 // Output: - [MyApp] Operating...
 logger.error("An error occurred"); // Clears the line
@@ -61,17 +62,6 @@ logger.end("completed"); // Ignored
 // Output: ✖ [MyApp] An error occurred
 ```
 
-> **Warning**
-> `logger.end` will **not** be automatically called before `console.log` or `stdout/stderr.write`. Please ensure you use `logger.end` or other log methods to properly end a continuous log.
-
-### Automatic Cleanup with `logger[Symbol.dispose]`
-
-The Logger supports automatic cleanup using the `Symbol.dispose` method. This ensures that any ongoing continuous log is properly ended when the logger instance is disposed:
-
-```ts
-import { Logger } from "@m234/logger";
-
-using logger = new Logger("MyApp");
-logger.start("Operating");
-// Output: ✔ [MyApp] Operating...done
-```
+> **Warning** `logger.end` will **not** be automatically called before
+> `console.log` or `stdout/stderr.write`. Please ensure you use `logger.end` or
+> other log methods to properly end a continuous log.
