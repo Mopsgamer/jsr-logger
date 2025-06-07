@@ -4,7 +4,7 @@ import { assertEquals } from "@std/assert";
 import process from "node:process";
 
 Deno.test("Logger.format logs args right", () => {
-  const logger = new Logger("TestApp");
+  using logger = new Logger("TestApp");
 
   assertEquals(logger.format("a.b."), `a.b.`);
   assertEquals(logger.format(true), `true`);
@@ -36,7 +36,7 @@ function expectOutput(
 Deno.test("Logger.info logs informational messages", () => {
   expectOutput(
     () => {
-      const logger = new Logger("TestApp");
+      using logger = new Logger("TestApp");
       logger.info("This is an informational message.");
     },
     `${blue("ⓘ [TestApp]")} This is an informational message.\n`,
@@ -46,7 +46,7 @@ Deno.test("Logger.info logs informational messages", () => {
 Deno.test("Logger.warn logs warning messages", () => {
   expectOutput(
     () => {
-      const logger = new Logger("TestApp");
+      using logger = new Logger("TestApp");
       logger.warn("This is a warning.");
     },
     `${yellow("⚠ [TestApp]")} This is a warning.\n`,
@@ -56,7 +56,7 @@ Deno.test("Logger.warn logs warning messages", () => {
 Deno.test("Logger.error logs error messages", () => {
   expectOutput(
     () => {
-      const logger = new Logger("TestApp");
+      using logger = new Logger("TestApp");
       logger.error("This is an error.");
     },
     `${red("✖ [TestApp]")} This is an error.\n`,
@@ -66,7 +66,7 @@ Deno.test("Logger.error logs error messages", () => {
 Deno.test("Logger.error logs error messages", () => {
   expectOutput(
     () => {
-      const logger = new Logger("TestApp");
+      using logger = new Logger("TestApp");
       logger.start("Never");
       logger.error("This is an error.");
     },
@@ -79,7 +79,7 @@ Deno.test("Logger.error logs error messages", () => {
 Deno.test("Logger.success logs success messages", () => {
   expectOutput(
     () => {
-      const logger = new Logger("TestApp");
+      using logger = new Logger("TestApp");
       logger.success("This is a success message.");
     },
     `${green("✔ [TestApp]")} This is a success message.\n`,
@@ -89,7 +89,7 @@ Deno.test("Logger.success logs success messages", () => {
 Deno.test("Logger.end should be ignored if not started", () => {
   expectOutput(
     () => {
-      const logger = new Logger("TestApp");
+      using logger = new Logger("TestApp");
       logger.end();
     },
     undefined,
@@ -99,7 +99,7 @@ Deno.test("Logger.end should be ignored if not started", () => {
 Deno.test("Logger.printf logs formatted args", () => {
   expectOutput(
     () => {
-      const logger = new Logger("TestApp");
+      using logger = new Logger("TestApp");
       logger.printf("Good %s.", "grief");
     },
     `Good grief.`,
@@ -109,7 +109,7 @@ Deno.test("Logger.printf logs formatted args", () => {
 Deno.test("Logger.printfln logs with a new line", () => {
   expectOutput(
     () => {
-      const logger = new Logger("TestApp");
+      using logger = new Logger("TestApp");
       logger.printfln("Good %s.", "grief");
     },
     `Good grief.\n`,
@@ -119,7 +119,7 @@ Deno.test("Logger.printfln logs with a new line", () => {
 Deno.test("Logger.start is completed", () => {
   expectOutput(
     () => {
-      const logger = new Logger("TestApp");
+      using logger = new Logger("TestApp");
       logger.start("Operating");
       logger.end("completed");
       assertEquals(logger.state, "completed");
@@ -132,7 +132,7 @@ Deno.test("Logger.start is completed", () => {
 Deno.test("Logger.start is failed", () => {
   expectOutput(
     () => {
-      const logger = new Logger("TestApp");
+      using logger = new Logger("TestApp");
       logger.start("Operating");
       logger.end("failed");
       assertEquals(logger.state, "failed");
@@ -145,7 +145,7 @@ Deno.test("Logger.start is failed", () => {
 Deno.test("Logger.start is aborted", () => {
   expectOutput(
     () => {
-      const logger = new Logger("TestApp");
+      using logger = new Logger("TestApp");
       logger.start("Operating");
       logger.end("aborted");
       assertEquals(logger.state, "aborted");
@@ -158,7 +158,7 @@ Deno.test("Logger.start is aborted", () => {
 Deno.test("Logger.start is completed with Logger.success", () => {
   expectOutput(
     () => {
-      const logger = new Logger("TestApp");
+      using logger = new Logger("TestApp");
       logger.start("Operating");
       logger.success("Succ");
       assertEquals(logger.state, "completed");
@@ -171,7 +171,7 @@ Deno.test("Logger.start is completed with Logger.success", () => {
 Deno.test("Logger.start is completed with Logger.info", () => {
   expectOutput(
     () => {
-      const logger = new Logger("TestApp");
+      using logger = new Logger("TestApp");
       logger.start("Operating");
       logger.info("test");
       assertEquals(logger.state, "completed");
@@ -185,7 +185,7 @@ Deno.test("Logger.start is completed with Logger.info", () => {
 Deno.test("Logger.endDisposable should be completed", () => {
   expectOutput(
     () => {
-      const logger = new Logger("TestApp");
+      using logger = new Logger("TestApp");
       logger.start("Operating");
       {
         using operation = logger;
@@ -200,7 +200,7 @@ Deno.test("Logger.endDisposable should be completed", () => {
 Deno.test("Logger.endDisposable should be completed after", () => {
   expectOutput(
     () => {
-      const logger = new Logger("TestApp");
+      using logger = new Logger("TestApp");
       logger.start("Operating");
       using operation = logger;
       assertEquals(logger.state, "started");
