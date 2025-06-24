@@ -3,8 +3,20 @@
   "description": "A colorful logger with the ability to log messages such as \"processing...done\".",
   "version": "1.1.0",
   "tasks": {
-    "publish": "deno task badge:tests && deno fmt && deno test && deno lint && deno publish",
-    "badge:tests": "deno run --allow-run=deno -R=assets -W=assets scripts/badge-tests.ts"
+    "publish": {
+      "command": "deno publish",
+      "dependencies": ["prepare"]
+    },
+    "prepare": {
+      "dependencies": ["lint", "test", "format"]
+    },
+    "lint": "deno lint",
+    "test": "deno test",
+    "format": {
+      "command": "deno fmt",
+      "dependencies": ["badge:tests"]
+    },
+    "badge:tests": "deno run --allow-run=deno -R=assets -W=assets scripts/badge-tests.js"
   },
   "lint": {
     "rules": {
