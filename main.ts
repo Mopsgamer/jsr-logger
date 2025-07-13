@@ -113,12 +113,41 @@ export class Logger {
   }
 
   /**
+   * Returns a formatted message string for a given level (no side effects).
+   * @param level - The log level: 'info', 'warn', 'error', 'success', or undefined/null for no level.
+   * @param args - The message and optional arguments to log.
+   */
+  sprintLevel(
+    level?: "info" | "warn" | "error" | "success",
+    ...args: unknown[]
+  ): string {
+    let prefix: string;
+    switch (level) {
+      case "info":
+        prefix = blue("ⓘ " + this.prefix);
+        break;
+      case "warn":
+        prefix = yellow("⚠ " + this.prefix);
+        break;
+      case "error":
+        prefix = red("✖ " + this.prefix);
+        break;
+      case "success":
+        prefix = green("✔ " + this.prefix);
+        break;
+      default:
+        prefix = this.prefix;
+        break;
+    }
+    return `${prefix} ${this.format(...args)}`;
+  }
+
+  /**
    * Logs an informational message.
    * @param args - The message and optional arguments to log.
    */
   info(...args: unknown[]): void {
-    const prefix = blue("ⓘ " + this.prefix);
-    this.println(`${prefix} ${this.format(...args)}`);
+    this.println(this.sprintLevel("info", ...args));
   }
 
   /**
@@ -129,9 +158,7 @@ export class Logger {
     if (this.#state === "started") {
       this.end("failed");
     }
-
-    const prefix = red("✖ " + this.prefix);
-    this.println(`${prefix} ${this.format(...args)}`);
+    this.println(this.sprintLevel("error", ...args));
   }
 
   /**
@@ -139,8 +166,7 @@ export class Logger {
    * @param args - The message and optional arguments to log.
    */
   warn(...args: unknown[]): void {
-    const prefix = yellow("⚠ " + this.prefix);
-    this.println(`${prefix} ${this.format(...args)}`);
+    this.println(this.sprintLevel("warn", ...args));
   }
 
   /**
@@ -151,9 +177,7 @@ export class Logger {
     if (this.#state === "started") {
       this.end("completed");
     }
-
-    const prefix = green("✔ " + this.prefix);
-    this.println(`${prefix} ${this.format(...args)}`);
+    this.println(this.sprintLevel("success", ...args));
   }
 
   /**
@@ -183,7 +207,7 @@ export class Logger {
     let color: (message: string) => string;
     switch (stateEnd) {
       case "failed":
-        char = "✖"
+        char = "✖";
         message = "failed";
         color = red;
         break;

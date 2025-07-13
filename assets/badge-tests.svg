@@ -3,9 +3,9 @@
   width="208"
   height="20"
   role="img"
-  aria-label="tests: 100.0% - 19 passed, 0 failed"
+  aria-label="tests: 100.0% - 20 passed, 0 failed"
 >
-  <title>tests: 100.0% - 19 passed, 0 failed</title><linearGradient
+  <title>tests: 100.0% - 20 passed, 0 failed</title><linearGradient
     id="s"
     x2="0"
     y2="100%"
@@ -53,11 +53,11 @@
       fill-opacity=".3"
       transform="scale(.1)"
       textLength="1610"
-    >100.0% - 19 passed, 0 failed</text><text
+    >100.0% - 20 passed, 0 failed</text><text
       x="1215"
       y="140"
       transform="scale(.1)"
       fill="#fff"
       textLength="1610"
-    >100.0% - 19 passed, 0 failed</text></g>
+    >100.0% - 20 passed, 0 failed</text></g>
 </svg>

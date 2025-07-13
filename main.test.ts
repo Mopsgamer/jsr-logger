@@ -4,6 +4,12 @@ import { assertEquals } from "@std/assert";
 import process from "node:process";
 import { stripVTControlCharacters } from "node:util";
 
+Deno.test("Logger.sprintLevel with no level returns uncolored prefix", () => {
+  using logger = new Logger("TestApp");
+  const result = logger.sprintLevel(undefined, "plain");
+  assertEquals(result, "[TestApp] plain");
+});
+
 Deno.test("Logger.format logs string arg right", () => {
   using logger = new Logger("TestApp");
   assertEquals(logger.format("a.b."), `a.b.`);
