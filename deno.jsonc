@@ -1,6 +1,6 @@
 {
   "name": "@m234/logger",
-  "description": "A colorful logger with the ability to log messages such as \"processing...done\".",
+  "description": "A colorful logger with the ability to log \"Processing ... done\".",
   "version": "1.1.0",
   "tasks": {
     "publish": {
@@ -16,7 +16,7 @@
       "command": "deno fmt",
       "dependencies": ["badge:tests"]
     },
-    "badge:tests": "deno run --allow-run=deno -R=assets -W=assets scripts/badge-tests.js"
+    "badge:tests": "deno run --allow-run=deno -R=assets -W=assets scripts/badge-tests.ts"
   },
   "lint": {
     "rules": {
@@ -37,8 +37,8 @@
     ".": "./main.ts"
   },
   "imports": {
-    "@std/assert": "jsr:@std/assert@^1.0.12",
-    "@std/fmt": "jsr:@std/fmt@^1.0.6",
-    "badge-maker": "npm:badge-maker@^4.1.0"
+    "@std/assert": "jsr:@std/assert@^1.0.13",
+    "@std/fmt": "jsr:@std/fmt@^1.0.8",
+    "badge-maker": "npm:badge-maker@^5.0.2"
   }
 }
