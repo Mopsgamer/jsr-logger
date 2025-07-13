@@ -2,14 +2,26 @@ import { blue, bold, green, magenta, red, yellow } from "@std/fmt/colors";
 import { Logger } from "./main.ts";
 import { assertEquals } from "@std/assert";
 import process from "node:process";
+import { stripVTControlCharacters } from "node:util";
 
-Deno.test("Logger.format logs args right", () => {
+Deno.test("Logger.format logs string arg right", () => {
   using logger = new Logger("TestApp");
-
   assertEquals(logger.format("a.b."), `a.b.`);
-  assertEquals(logger.format(true), `true`);
-  assertEquals(logger.format({}), `[object Object]`);
-  assertEquals(logger.format([]), ``);
+});
+
+Deno.test("Logger.format logs boolean arg right", () => {
+  using logger = new Logger("TestApp");
+  assertEquals(stripVTControlCharacters(logger.format(true)), `true`);
+});
+
+Deno.test("Logger.format logs object arg right", () => {
+  using logger = new Logger("TestApp");
+  assertEquals(logger.format({}), `{}`);
+});
+
+Deno.test("Logger.format logs array arg right", () => {
+  using logger = new Logger("TestApp");
+  assertEquals(stripVTControlCharacters(logger.format([])), `[ [length]: 0 ]`);
 });
 
 function expectOutput(
