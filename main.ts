@@ -26,6 +26,11 @@ export type LoggerStateEnd = "completed" | "aborted" | "failed";
 export type LoggerState = LoggerStateStart | LoggerStateEnd;
 
 /**
+ * Logger levels for formatted console output.
+ */
+type LoggerLevel = "info" | "warn" | "error" | "success";
+
+/**
  * Logger class for formatted console output.
  */
 export class Logger {
@@ -118,22 +123,22 @@ export class Logger {
    * @param args - The message and optional arguments to log.
    */
   sprintLevel(
-    level?: "info" | "warn" | "error" | "success",
+    level?: LoggerLevel,
     ...args: unknown[]
   ): string {
     let prefix: string;
     switch (level) {
       case "info":
-        prefix = blue("ⓘ " + this.prefix);
+        prefix = blue("🛈 " + this.prefix);
         break;
       case "warn":
         prefix = yellow("⚠ " + this.prefix);
         break;
       case "error":
-        prefix = red("✖ " + this.prefix);
+        prefix = red("✗ " + this.prefix);
         break;
       case "success":
-        prefix = green("✔ " + this.prefix);
+        prefix = green("✓ " + this.prefix);
         break;
       default:
         prefix = this.prefix;
@@ -203,30 +208,28 @@ export class Logger {
     this.#state = stateEnd;
 
     let message: string;
-    let char: string;
+    let level: LoggerLevel;
     let color: (message: string) => string;
     switch (stateEnd) {
       case "failed":
-        char = "✖";
         message = "failed";
+        level = "error";
         color = red;
         break;
       case "aborted":
-        char = "⚠";
         message = "aborted";
+        level = "warn";
         color = yellow;
         break;
       default:
-        char = "✔";
         message = "done";
+        level = "success";
         color = green;
         break;
     }
 
-    const prefix = color(char + " " + this.prefix);
-    const text = this.format(...this.startedArgs);
     const result = bold(color(message));
-    this.printfln(`\r${prefix} ${text} ... ${result}`);
+    this.printfln(`\r${this.sprintLevel(level, ...this.startedArgs)} ... ${result}`);
   }
 
   [Symbol.dispose]() {
