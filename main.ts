@@ -92,13 +92,9 @@ export class Logger {
    * @param message - The message to print.
    */
   print(message: string): void {
-    if (this.#state === "started") {
-      this.end("completed");
-    }
+    if (this.#state === "started") this.end("completed");
 
-    if (this.disabled) {
-      return;
-    }
+    if (this.disabled) return;
 
     process.stdout.write(message);
   }
@@ -172,9 +168,8 @@ export class Logger {
    * @param args - The message and optional arguments to log.
    */
   error(...args: unknown[]): void {
-    if (this.#state === "started") {
-      this.end("failed");
-    }
+    if (this.#state === "started") this.end("failed");
+
     this.println(this.sprintLevel("error", ...args));
   }
 
@@ -191,9 +186,8 @@ export class Logger {
    * @param args - The message and optional arguments to log.
    */
   success(...args: unknown[]): void {
-    if (this.#state === "started") {
-      this.end("completed");
-    }
+    if (this.#state === "started") this.end("completed");
+
     this.println(this.sprintLevel("success", ...args));
   }
 
@@ -203,6 +197,7 @@ export class Logger {
    * @param args - The message and optional arguments to log.
    */
   start(...args: unknown[]): void {
+    if (this.#state === "started") this.end();
     this.startedArgs = args;
     const prefix = magenta("- " + this.prefix);
     this.print(`${prefix} ${this.format(...args)} ...`);

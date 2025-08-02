@@ -1,6 +1,6 @@
 import { Logger } from "../main.ts";
 
-const logger = new Logger("@m234/logger");
+using logger = new Logger("@m234/logger");
 
 logger.info("Info message.");
 logger.warn("Warn message.");
