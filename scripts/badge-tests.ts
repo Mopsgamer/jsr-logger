@@ -54,11 +54,19 @@ function colorFromPercent(percent: number): string {
   return "rgb(" + r + "," + g + ",0)";
 }
 
+const details: string = ([
+  [passed, "passed"],
+  [failed, "failed"],
+] as [number, string][])
+  .filter(([count]) => count > 0)
+  .map(([count, label]) => count + " " + label)
+  .join(", ");
+
 Deno.writeTextFile(
   "assets/badge-tests.svg",
   makeBadge({
     color: colorFromPercent(percentPass),
-    message: `${percentPass.toFixed(1)}% - ${passed} passed, ${failed} failed`,
+    message: percentPass.toFixed(1) + "% - " + details,
     label: "tests",
   }),
 );

@@ -10,6 +10,21 @@ Deno.test("Logger.sprintLevel with no level returns uncolored prefix", () => {
   assertEquals(result, "[TestApp] plain");
 });
 
+Deno.test("Logger.disabled disables logging", () => {
+  expectOutput(
+    () => {
+      using logger = new Logger("TestApp", true);
+      logger.info("info");
+    },
+  );
+});
+
+Deno.test("Logger.disabled keeps sprintLevel", () => {
+  using logger = new Logger("TestApp", true);
+  const result = logger.sprintLevel(undefined, "plain");
+  assertEquals(result, "[TestApp] plain");
+});
+
 Deno.test("Logger.format logs string arg right", () => {
   using logger = new Logger("TestApp");
   assertEquals(logger.format("a.b."), `a.b.`);
