@@ -1,4 +1,4 @@
-import { blue, bold, green, magenta, red, yellow } from "@std/fmt/colors";
+import { blue, bold, gray, green, magenta, red, yellow } from "@std/fmt/colors";
 import { Logger } from "./main.ts";
 import { assertEquals } from "@std/assert";
 import process from "node:process";
@@ -185,6 +185,19 @@ Deno.test("Logger.start is aborted", () => {
     },
     `${magenta("- [TestApp]")} Operating ...`,
     `\r${yellow("⚠ [TestApp]")} Operating ... ${bold(yellow("aborted"))}\n`,
+  );
+});
+
+Deno.test("Logger.start is skipped", () => {
+  expectOutput(
+    () => {
+      using logger = new Logger("TestApp");
+      logger.start("Operating");
+      logger.end("skipped");
+      assertEquals(logger.state, "skipped");
+    },
+    `${magenta("- [TestApp]")} Operating ...`,
+    `\r${gray("✓ [TestApp]")} Operating ... ${gray("skipped")}\n`,
   );
 });
 

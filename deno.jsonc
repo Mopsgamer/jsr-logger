@@ -26,6 +26,7 @@
   "publish": {
     "exclude": [
       // https://github.com/jsr-io/jsr/issues/566
+      "assets",
       "scripts",
       "coverage",
       ".github",

@@ -1,9 +1,11 @@
 # @m234/logger
 
 [![JSR](https://jsr.io/badges/@m234/logger)](https://jsr.io/@m234/logger)
-![Tests](./assets/badge-tests.svg) ![Tests coverage](./assets/badge-cov.svg)
+![Tests](https://raw.githubusercontent.com/Mopsgamer/jsr-logger/refs/heads/main/assets/badge-tests.svg) ![Tests coverage](https://raw.githubusercontent.com/Mopsgamer/jsr-logger/refs/heads/main/assets/badge-cov.svg)
 
 A colorful logger with the ability to log "Processing ... done".
+
+<img src="https://raw.githubusercontent.com/Mopsgamer/jsr-logger/refs/heads/main/assets/preview.png" height="140">
 
 ## Usage
 
@@ -11,6 +13,7 @@ Here is an example of how to use the Logger:
 
 ```ts
 import { Logger } from "@m234/logger";
+import ora from "ora";
 
 using logger = new Logger("MyApp");
 
@@ -19,8 +22,9 @@ logger.println("Hello, World!");
 logger.printf("Hello, World! %o", true);
 logger.printfln("Hello, World! %o", true);
 
-// String-only formatting (no side effects):
-ora.text = logger.sprintLevel("info", "This is an informational message.");
+// Get string
+const text = logger.sprintLevel("info", "This is an informational message.");
+ora(text).start();
 
 logger.info("This is an informational message.");
 logger.warn("This is a warning.");
@@ -29,7 +33,14 @@ logger.success("This is a success message.");
 // Note: There are no 'log' (use 'printfln'), 'debug', or 'verbose' methods.
 
 logger.start("Operating");
-logger.end();
+logger.end(); // Same as logger.end("completed");
+// Output: 🛈 [MyApp] Operating ... done
+logger.end("skipped");
+// Output: ✓ [MyApp] Operating ... skipped
+logger.end("failed");
+// Output: ✗ [MyApp] Operating ... failed
+logger.end("aborted");
+// Output: ⚠ [MyApp] Operating ... aborted
 ```
 
 ### Logging with Formatting
