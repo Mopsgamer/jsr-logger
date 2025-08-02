@@ -247,8 +247,7 @@ export class Logger {
   start(...args: unknown[]): void {
     if (this.#state === "started") this.end();
     this.startArgs = args;
-    process.stdout.write('\x1B[?25l');
-    this.print(this.sprintStart(...args));
+    this.print(this.sprintStart(...args) + "\x1B[?25l");
     this.#state = "started";
   }
 
@@ -260,8 +259,9 @@ export class Logger {
   end(stateEnd: LoggerStateEnd = "completed"): void {
     if (this.#state !== "started") return;
     this.#state = stateEnd;
-    this.printfln("\r" + this.sprintEnd(this.startArgs, stateEnd));
-    process.stdout.write('\x1B[?25h');
+    this.printfln(
+      "\r" + this.sprintEnd(this.startArgs, stateEnd) + "\x1B[?25h",
+    );
   }
 
   [Symbol.dispose]() {

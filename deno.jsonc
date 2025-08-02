@@ -8,10 +8,10 @@
       "dependencies": ["prepare"]
     },
     "prepare": {
-      "dependencies": ["lint", "test", "format"]
+      "dependencies": ["lint", "format", "test"]
     },
     "lint": "deno lint",
-    "test": "deno test",
+    "test": "deno test; deno fmt ./assets/",
     "format": {
       "command": "deno fmt",
       "dependencies": ["badge:tests"]
