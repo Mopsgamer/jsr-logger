@@ -24,13 +24,15 @@
     }
   },
   "publish": {
+    "include": [
+      "README.*",
+      "deno.*",
+      "**/*.ts"
+    ],
     "exclude": [
       // https://github.com/jsr-io/jsr/issues/566
-      "assets",
-      "scripts",
-      "coverage",
-      ".**/*",
-      "**/*.test.ts"
+      "**/*.*.ts",
+      "scripts"
     ]
   },
   "license": "MIT",
