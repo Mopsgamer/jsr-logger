@@ -32,6 +32,13 @@ export type LoggerState = LoggerStateStart | LoggerStateEnd;
 export type LoggerLevel = "info" | "warn" | "error" | "success";
 
 /**
+ * Type representing the task sprint messages for the logger.
+ */
+export type TaskSprint = {
+  [key in "started" | LoggerStateEnd]: string;
+};
+
+/**
  * Logger class for formatted console output.
  */
 export class Logger {
@@ -59,9 +66,9 @@ export class Logger {
   }
 
   /**
-   * The arguments passed to the start method.
+   * The prepared strings for the continuous log.
    */
-  private startArgs: unknown[] = [];
+  private taskSprint: TaskSprint = undefined as any;
 
   /**
    * Creates a new Logger instance.
@@ -156,51 +163,23 @@ export class Logger {
     return `${prefix} ${this.format(...args)}`;
   }
 
-  sprintStart(...args: unknown[]): string {
-    const prefix = magenta("- " + this.prefix);
-    return `${prefix} ${this.format(...args)} ...`;
-  }
-
   /**
-   * Returns a formatted end message string for a continuous log without side effects.
-   * @param stateEnd - The end state of the continuous log. Defaults to "completed".
+   * Returns a formatted message string for the end of a continuous log.
    */
-  sprintEnd(
-    startArgs: unknown[],
-    stateEnd: LoggerStateEnd = "completed",
-  ): string {
-    let message: string;
-    let level: LoggerLevel;
-    let color: (message: string) => string;
-    switch (stateEnd) {
-      case "failed":
-        message = "failed";
-        level = "error";
-        color = red;
-        break;
-      case "aborted":
-        message = "aborted";
-        level = "warn";
-        color = yellow;
-        break;
-      case "skipped":
-        message = "skipped";
-        level = "success";
-        color = gray;
-        const prefix = gray("✓ " + this.prefix);
-        const proc = `${prefix} ${this.format(...startArgs)}`;
-        return `${proc} ... ${color(message)}`;
-        break;
-      case "completed":
-      default:
-        message = "done";
-        level = "success";
-        color = green;
-        break;
-    }
-
-    const proc = this.sprintLevel(level, ...startArgs);
-    return `${proc} ... ${bold(color(message))}`;
+  sprintTask(...args: unknown[]): TaskSprint {
+    const title = this.format(...args);
+    const left = ` ${title} ...`;
+    const taskSprint: TaskSprint = {
+      started: magenta("- " + this.prefix) + left,
+      aborted: this.sprintLevel("warn", title) + " ... " +
+        bold(yellow("aborted")),
+      completed: this.sprintLevel("success", title) + " ... " +
+        bold(green("done")),
+      failed: this.sprintLevel("error", title) + " ... " + bold(red("failed")),
+      skipped: gray("✓ " + this.prefix) + " " + title + " ... " +
+        gray("skipped"),
+    };
+    return taskSprint;
   }
 
   /**
@@ -246,8 +225,8 @@ export class Logger {
    */
   start(...args: unknown[]): void {
     if (this.#state === "started") this.end();
-    this.startArgs = args;
-    this.print(this.sprintStart(...args) + "\x1B[?25l");
+    this.taskSprint = this.sprintTask(...args);
+    this.print(this.taskSprint.started + "\x1B[?25l");
     this.#state = "started";
   }
 
@@ -259,9 +238,7 @@ export class Logger {
   end(stateEnd: LoggerStateEnd = "completed"): void {
     if (this.#state !== "started") return;
     this.#state = stateEnd;
-    this.printfln(
-      "\r" + this.sprintEnd(this.startArgs, stateEnd) + "\x1B[?25h",
-    );
+    this.printfln("\r" + this.taskSprint[stateEnd] + "\x1B[?25h");
   }
 
   [Symbol.dispose]() {
