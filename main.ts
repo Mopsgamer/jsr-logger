@@ -10,6 +10,10 @@ import {
 } from "@std/fmt/colors";
 import process from "node:process";
 import { formatWithOptions } from "node:util";
+import { createInterface } from "node:readline/promises";
+import isInteractive from "is-interactive";
+
+const readline = createInterface(process.stdin, process.stdout, undefined, isInteractive())
 
 /**
  * Enum representing the starting states of the logger.
@@ -30,6 +34,10 @@ export type LoggerState = LoggerStateStart | LoggerStateEnd;
  * Logger levels for formatted console output.
  */
 export type LoggerLevel = "info" | "warn" | "error" | "success";
+
+export type Task = {
+  
+}
 
 /**
  * Type representing the task sprint messages for the logger.

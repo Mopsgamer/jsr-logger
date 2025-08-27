@@ -6,7 +6,8 @@
     "jsr:@std/internal@^1.0.6": "1.0.10",
     "npm:@types/node@*": "24.1.0",
     "npm:@types/node@^24.1.0": "24.1.0",
-    "npm:badge-maker@^5.0.2": "5.0.2"
+    "npm:badge-maker@^5.0.2": "5.0.2",
+    "npm:is-interactive@2": "2.0.0"
   },
   "jsr": {
     "@std/assert@1.0.13": {
@@ -69,6 +70,9 @@
     "css-unit-converter@1.1.2": {
       "integrity": "sha512-IiJwMC8rdZE0+xiEZHeru6YoONC4rfPMqGm2W85jMIbkFvv5nFTwJVFHam2eFrN6txmoUYFAFXiv8ICVeTO0MA=="
     },
+    "is-interactive@2.0.0": {
+      "integrity": "sha512-qP1vozQRI+BMOPcjFzrjXuQvdak2pHNUMZoeG2eRbiSqyvbEf/wQtEOTOX1guk6E3t36RkaqiSt8A/6YElNxLQ=="
+    },
     "undici-types@7.8.0": {
       "integrity": "sha512-9UJ2xGDvQ43tYyVMpuHlsgApydB8ZKfVYTsLDhXkFL/6gfkp+U8xTGdh8pMJv1SpZna0zxG1DwsKZsreLbXBxw=="
     }
@@ -78,7 +82,8 @@
       "jsr:@std/assert@^1.0.13",
       "jsr:@std/fmt@^1.0.8",
       "npm:@types/node@^24.1.0",
-      "npm:badge-maker@^5.0.2"
+      "npm:badge-maker@^5.0.2",
+      "npm:is-interactive@2"
     ]
   }
 }
