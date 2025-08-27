@@ -126,24 +126,24 @@ async function render(): Promise<boolean> {
   const isLogIncomplete = runningTasks.length > 0;
 
   const list = Task.sprintList();
-  const changed = prevLog !== list;
-  if (changed) process.stdout.write("\x1B[1A\x1B[2K".repeat(newLines));
-  process.stdout.write(logStack);
-  newLines = Math.max(
-    0,
-    ((logStack + list).match(
-      new RegExp(`\\n|[^\\n]{${process.stdout.columns}}`, "g"),
-    ) ?? []).length,
-  );
+  const log = logStack + list;
   logStack = "";
+  const changed = prevLog !== log;
+  if (changed) process.stdout.write("\x1B[1A\x1B[2K".repeat(newLines));
+  newLines = (list.match(
+      new RegExp(`\\n|[^\\n]{${process.stdout.columns}}`, "g"),
+    ) ?? []).length
+  
   if (changed) {
-    process.stdout.write(list);
+    process.stdout.write(log);
   }
-  prevLog = list;
+  prevLog = log;
   return isLogIncomplete;
 }
 
 async function renderCI(): Promise<boolean> {
+  process.stdout.write(logStack);
+  logStack = "";
   for (const task of Task.list) {
     if (task.state === "idle") continue;
     if (task.state === "started") {
@@ -172,7 +172,6 @@ const renderer = async function () {
   }
   await render();
   process.stdout.write("\x1B[?25h");
-
   rendererMutex.release();
 };
 
@@ -329,7 +328,7 @@ export class Logger {
    */
   print(message: string): void {
     if (this.disabled) return;
-    process.stdout.write(message);
+    logStack += message;
   }
 
   /**
