@@ -91,7 +91,8 @@ export type TaskOptions = LoggerOptions & {
   padding?: string | TaskPadder;
 };
 
-let logStack: string = "\n";
+let prevLog: string = "";
+let logStack: string = "";
 let n = 0;
 /**
  * @returns `true` if any task is running.
@@ -101,9 +102,9 @@ async function render(): Promise<boolean> {
   let runningTasks = Task.list.filter((task) => task.state === "started");
   const isLogIncomplete = runningTasks.length > 0;
 
-  process.stdout.write("\x1B[" + n.toString() + "A");
-  process.stdout.write("\x1B[2K");
   const list = Task.sprint();
+  const changed = prevLog !== list
+  if (changed) process.stdout.write("\x1B[1A\x1B[2K".repeat(n));
   process.stdout.write(logStack);
   n = Math.max(
     0,
@@ -111,8 +112,11 @@ async function render(): Promise<boolean> {
       new RegExp(`\\n|[^\\n]{${process.stdout.columns}}`, "g"),
     ) ?? []).length,
   );
-  logStack = "\n";
-  process.stdout.write(list);
+  logStack = "";
+  if (changed) {
+    process.stdout.write(list);
+  }
+  prevLog = list;
   return isLogIncomplete;
 }
 
