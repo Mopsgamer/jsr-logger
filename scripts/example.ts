@@ -12,24 +12,19 @@ logger.println("");
 
 await delay(500);
 
-let task1 = logger.task("Processing 1/3");
-task1.state = "started";
-setTimeout(() => task1.state = "completed", 3000);
+let task1 = logger.task({ text: "Processing 1/3" }).start();
+setTimeout(() => task1.end("completed"), 3000);
 
-let task2 = logger.task("Processing 2/3");
-task2.state = "started";
-setTimeout(() => task2.state = "aborted", 7000);
+let task2 = logger.task({ text: "Processing 2/3" }).start();
+setTimeout(() => task2.end("aborted"), 7000);
 
-let task3 = logger.task("Processing 3/3");
-task3.state = "started";
-let task31 = task3.task("Sub-task");
-task31.state = "started";
-let task311 = task31.task("Sub-sub-task");
-task31.state = "started";
-setTimeout(() => task311.state = "completed", 200);
-setTimeout(() => task31.state = "completed", 200);
+let task3 = logger.task({ text: "Processing 3/3" }).start();
+let task31 = task3.task({ text: "Sub-task" }).start();
+let task311 = task31.task({ text: "Sub-sub-task" }).start();
+setTimeout(() => task311.end("completed"), 200);
+setTimeout(() => task31.end("completed"), 200);
 setTimeout(() => {
-  task3.state = "skipped";
-  task31.parent = task311.parent = undefined;
-  task3.state = "idle";
+  task3.end("skipped");
 }, 4000);
+
+let task11 = task1.task({ text: "Thinking" }).startRunner(() => "skipped");

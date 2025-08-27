@@ -183,6 +183,7 @@ export class Task implements Disposable {
   static list: Task[] = [];
 
   static sprintList(): string {
+    Task.list.sort((a, b) => a.parent === b ? 1 : b.parent === a ? -1 : 0);
     const visibleTasks = Task.list.filter((task) => task.state !== "idle");
     let result = "";
     if (visibleTasks.length > 0) {
@@ -201,6 +202,7 @@ export class Task implements Disposable {
     }
     return result;
   }
+
   state: TaskState = "idle";
 
   prefix: string;
@@ -217,7 +219,7 @@ export class Task implements Disposable {
     this.parent = options.parent;
     this.padding = options.padding ?? "  | ";
     if (this.parent) {
-      Task.list.splice(Task.list.indexOf(this.parent), 0, this);
+      Task.list.splice(Task.list.indexOf(this.parent) + 1, 0, this);
     } else {
       Task.list.push(this);
     }
@@ -262,21 +264,26 @@ export class Task implements Disposable {
   /**
    * Runs the task with a given runner function.
    */
-  startRunner(runner: TaskRunner<TaskStateEnd>): Task {
+  startRunner(runner: TaskRunner<TaskStateEnd | Promise<TaskStateEnd>>): Task {
     this.state = "started";
-    this.state = runner({ task: this, list: Task.list });
+    const state = runner({ task: this, list: Task.list });
+    if (typeof state === "string") {
+      this.state = state;
+    } else {
+      state.then((state) => this.state = state);
+    }
     return this;
   }
 
   /**
    * Creates a subtask under the current task.
    */
-  task(options: Omit<TaskOptions, "prefix">): Task {
+  task(options: TaskOptions): Task {
     const subtask = new Task({
-      ...options,
       prefix: this.prefix,
+      ...options,
+      parent: this,
     });
-    subtask.parent = this;
     return subtask;
   }
 
@@ -389,10 +396,10 @@ export class Logger {
    * Can be ended by the `end` and other log-methods such as `info` and `error`.
    * @param args - The message and optional arguments to log.
    */
-  task(options: Omit<TaskOptions, "prefix">): Task {
+  task(options: TaskOptions): Task {
     return new Task({
-      ...options,
       prefix: this.prefix,
+      ...options,
     });
   }
 }
