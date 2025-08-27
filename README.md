@@ -16,7 +16,7 @@ Here is an example of how to use the Logger:
 import { Logger } from "@m234/logger";
 import ora from "ora";
 
-using logger = new Logger("MyApp");
+const logger = new Logger("MyApp");
 
 logger.print("Hello, World!");
 logger.println("Hello, World!");
@@ -47,7 +47,7 @@ You can log messages without a new line or prefix, but with formatting:
 ```ts
 import { Logger } from "@m234/logger";
 
-using logger = new Logger("MyApp");
+const logger = new Logger("MyApp");
 
 logger.printf("Starting %s ... ", "machine");
 logger.println("done");
@@ -61,7 +61,7 @@ For more control, use the `start/end` methods:
 ```ts
 import { Logger } from "@m234/logger";
 
-using logger = new Logger("MyApp");
+const logger = new Logger("MyApp");
 
 logger.start("Operating");
 // Output: 🛈 [MyApp] Operating ...
@@ -75,7 +75,7 @@ continuous log. All methods except `error` will mark the log as completed:
 ```ts
 import { Logger } from "@m234/logger";
 
-using logger = new Logger("MyApp");
+const logger = new Logger("MyApp");
 
 logger.start("Operating");
 // Output: - [MyApp] Operating ...

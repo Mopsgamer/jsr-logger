@@ -8,7 +8,7 @@ import {
   red,
   yellow,
 } from "@std/fmt/colors";
-import { Logger } from "./main.ts";
+import { format, Logger } from "./main.ts";
 import { assertEquals } from "@std/assert";
 import process from "node:process";
 import { stripVTControlCharacters } from "node:util";
@@ -35,14 +35,14 @@ function expectOutput(
 }
 
 Deno.test("Logger.sprintLevel with no level returns uncolored prefix", () => {
-  using logger = new Logger("TestApp");
-  const result = logger.sprintLevel(undefined, "plain");
+  const logger = new Logger({ prefix: "TestApp" });
+  const result = logger.sprintLevel("plain");
   assertEquals(result, "[TestApp] plain");
 });
 
-Deno.test("Logger.sprintStart", () => {
-  using logger = new Logger("TestApp");
-  const result = logger.sprintTask(undefined, "plain");
+Deno.test("Logger.sprintTask", () => {
+  const logger = new Logger({ prefix: "TestApp" });
+  const result = logger.sprintTask("plain");
   assertEquals(
     result.started,
     magenta("- [TestApp]") + " " + brightBlack("undefined") + " " +
@@ -63,42 +63,42 @@ Deno.test("Logger.sprintStart", () => {
 Deno.test("Logger.disabled disables logging", () => {
   expectOutput(
     () => {
-      using logger = new Logger("TestApp", true);
+      const logger = new Logger({ prefix: "TestApp", disabled: true });
       logger.info("info");
     },
   );
 });
 
 Deno.test("Logger.disabled keeps sprintLevel", () => {
-  using logger = new Logger("TestApp", true);
-  const result = logger.sprintLevel(undefined, "plain");
+  const logger = new Logger({ prefix: "TestApp", disabled: true });
+  const result = logger.sprintLevel("plain");
   assertEquals(result, "[TestApp] plain");
 });
 
-Deno.test("Logger.format logs string arg right", () => {
-  using logger = new Logger("TestApp");
-  assertEquals(logger.format("a.b."), `a.b.`);
+Deno.test("format logs string arg right", () => {
+  const logger = new Logger({ prefix: "TestApp" });
+  assertEquals(format("a.b."), `a.b.`);
 });
 
-Deno.test("Logger.format logs boolean arg right", () => {
-  using logger = new Logger("TestApp");
-  assertEquals(stripVTControlCharacters(logger.format(true)), `true`);
+Deno.test("format logs boolean arg right", () => {
+  const logger = new Logger({ prefix: "TestApp" });
+  assertEquals(stripVTControlCharacters(format(true)), `true`);
 });
 
-Deno.test("Logger.format logs object arg right", () => {
-  using logger = new Logger("TestApp");
-  assertEquals(logger.format({}), `{}`);
+Deno.test("format logs object arg right", () => {
+  const logger = new Logger({ prefix: "TestApp" });
+  assertEquals(format({}), `{}`);
 });
 
-Deno.test("Logger.format logs array arg right", () => {
-  using logger = new Logger("TestApp");
-  assertEquals(stripVTControlCharacters(logger.format([])), `[ [length]: 0 ]`);
+Deno.test("format logs array arg right", () => {
+  const logger = new Logger({ prefix: "TestApp" });
+  assertEquals(stripVTControlCharacters(format([])), `[ [length]: 0 ]`);
 });
 
 Deno.test("Logger.info logs informational messages", () => {
   expectOutput(
     () => {
-      using logger = new Logger("TestApp");
+      const logger = new Logger({ prefix: "TestApp" });
       logger.info("This is an informational message.");
     },
     `${blue("ℹ [TestApp]")} This is an informational message.\n`,
@@ -108,7 +108,7 @@ Deno.test("Logger.info logs informational messages", () => {
 Deno.test("Logger.warn logs warning messages", () => {
   expectOutput(
     () => {
-      using logger = new Logger("TestApp");
+      const logger = new Logger({ prefix: "TestApp" });
       logger.warn("This is a warning.");
     },
     `${yellow("⚠ [TestApp]")} This is a warning.\n`,
@@ -118,7 +118,7 @@ Deno.test("Logger.warn logs warning messages", () => {
 Deno.test("Logger.error logs error messages", () => {
   expectOutput(
     () => {
-      using logger = new Logger("TestApp");
+      const logger = new Logger({ prefix: "TestApp" });
       logger.error("This is an error.");
     },
     `${red("✗ [TestApp]")} This is an error.\n`,
@@ -128,8 +128,8 @@ Deno.test("Logger.error logs error messages", () => {
 Deno.test("Logger.error logs error messages", () => {
   expectOutput(
     () => {
-      using logger = new Logger("TestApp");
-      logger.task("Never");
+      const logger = new Logger({ prefix: "TestApp" });
+      logger.task({ text: "Never" });
       logger.error("This is an error.");
     },
     `${magenta("- [TestApp]")} Never ...\x1B[?25l`,
@@ -141,7 +141,7 @@ Deno.test("Logger.error logs error messages", () => {
 Deno.test("Logger.success logs success messages", () => {
   expectOutput(
     () => {
-      using logger = new Logger("TestApp");
+      const logger = new Logger({ prefix: "TestApp" });
       logger.success("This is a success message.");
     },
     `${green("✓ [TestApp]")} This is a success message.\n`,
@@ -151,40 +151,18 @@ Deno.test("Logger.success logs success messages", () => {
 Deno.test("Logger.end should be ignored if not started", () => {
   expectOutput(
     () => {
-      using logger = new Logger("TestApp");
-      logger.end();
+      const logger = new Logger({ prefix: "TestApp" });
+      logger.task({ text: "test" }).end("completed");
     },
-    undefined,
-  );
-});
-
-Deno.test("Logger.printf logs formatted args", () => {
-  expectOutput(
-    () => {
-      using logger = new Logger("TestApp");
-      logger.printf("Good %s.", "grief");
-    },
-    `Good grief.`,
-  );
-});
-
-Deno.test("Logger.printfln logs with a new line", () => {
-  expectOutput(
-    () => {
-      using logger = new Logger("TestApp");
-      logger.printfln("Good %s.", "grief");
-    },
-    `Good grief.\n`,
   );
 });
 
 Deno.test("Logger.start is completed", () => {
   expectOutput(
     () => {
-      using logger = new Logger("TestApp");
-      logger.task("Operating");
-      logger.end("completed");
-      assertEquals(logger.#state, "completed");
+      const logger = new Logger({ prefix: "TestApp" });
+      const task = logger.task({ text: "Operating" }).end("completed");
+      assertEquals(task.state, "completed");
     },
     `${magenta("- [TestApp]")} Operating ...\x1B[?25l`,
     `\r${green("✓ [TestApp]")} Operating ... ${bold(green("done"))}\x1B[?25h\n`,
@@ -194,10 +172,9 @@ Deno.test("Logger.start is completed", () => {
 Deno.test("Logger.start is failed", () => {
   expectOutput(
     () => {
-      using logger = new Logger("TestApp");
-      logger.task("Operating");
-      logger.end("failed");
-      assertEquals(logger.#state, "failed");
+      const logger = new Logger({ prefix: "TestApp" });
+      const task = logger.task({ text: "Operating" }).end("failed");
+      assertEquals(task.state, "failed");
     },
     `${magenta("- [TestApp]")} Operating ...\x1B[?25l`,
     `\r${red("✗ [TestApp]")} Operating ... ${bold(red("failed"))}\x1B[?25h\n`,
@@ -207,10 +184,9 @@ Deno.test("Logger.start is failed", () => {
 Deno.test("Logger.start is aborted", () => {
   expectOutput(
     () => {
-      using logger = new Logger("TestApp");
-      logger.task("Operating");
-      logger.end("aborted");
-      assertEquals(logger.#state, "aborted");
+      const logger = new Logger({ prefix: "TestApp" });
+      const task = logger.task({ text: "Operating" }).end("aborted");
+      assertEquals(task.state, "aborted");
     },
     `${magenta("- [TestApp]")} Operating ...\x1B[?25l`,
     `\r${yellow("⚠ [TestApp]")} Operating ... ${
@@ -222,10 +198,9 @@ Deno.test("Logger.start is aborted", () => {
 Deno.test("Logger.start is skipped", () => {
   expectOutput(
     () => {
-      using logger = new Logger("TestApp");
-      logger.task("Operating");
-      logger.end("skipped");
-      assertEquals(logger.#state, "skipped");
+      const logger = new Logger({ prefix: "TestApp" });
+      const task = logger.task({ text: "Operating" }).end("skipped");
+      assertEquals(task.state, "skipped");
     },
     `${magenta("- [TestApp]")} Operating ...\x1B[?25l`,
     `\r${gray("✓ [TestApp]")} Operating ... ${gray("skipped")}\x1B[?25h\n`,
@@ -235,10 +210,10 @@ Deno.test("Logger.start is skipped", () => {
 Deno.test("Logger.start is completed with Logger.success", () => {
   expectOutput(
     () => {
-      using logger = new Logger("TestApp");
-      logger.task("Operating");
+      const logger = new Logger({ prefix: "TestApp" });
+      const task = logger.task({ text: "Operating" }).start();
       logger.success("Succ");
-      assertEquals(logger.#state, "completed");
+      assertEquals(task.state, "completed");
     },
     `${magenta("- [TestApp]")} Operating ...\x1B[?25l`,
     `\r${green("✓ [TestApp]")} Operating ... ${bold(green("done"))}\x1B[?25h\n`,
@@ -248,10 +223,10 @@ Deno.test("Logger.start is completed with Logger.success", () => {
 Deno.test("Logger.start is completed with Logger.info", () => {
   expectOutput(
     () => {
-      using logger = new Logger("TestApp");
-      logger.task("Operating");
+      const logger = new Logger({ prefix: "TestApp" });
+      const task = logger.task({ text: "Operating" }).start();
       logger.info("test");
-      assertEquals(logger.#state, "completed");
+      assertEquals(task.state, "completed");
     },
     `${magenta("- [TestApp]")} Operating ...\x1B[?25l`,
     `\r${green("✓ [TestApp]")} Operating ... ${bold(green("done"))}\x1B[?25h\n`,
@@ -262,11 +237,11 @@ Deno.test("Logger.start is completed with Logger.info", () => {
 Deno.test("Logger second start ends previous if not ended", () => {
   expectOutput(
     () => {
-      using logger = new Logger("TestApp");
-      logger.task("Operating 1");
-      logger.task("Operating 2");
-      logger.task("Operating 3");
-      logger.end();
+      const logger = new Logger({ prefix: "TestApp" });
+      const task = logger.task({ text: "Operating 1" });
+      task.text = "Operating 2";
+      task.text = "Operating 3";
+      task.end("completed");
     },
     `${magenta("- [TestApp]")} Operating 1 ...\x1B[?25l`,
     `\r${green("✓ [TestApp]")} Operating 1 ... ${
@@ -280,30 +255,5 @@ Deno.test("Logger second start ends previous if not ended", () => {
     `\r${green("✓ [TestApp]")} Operating 3 ... ${
       bold(green("done"))
     }\x1B[?25h\n`,
-  );
-});
-
-Deno.test("Logger dispose works", () => {
-  expectOutput(
-    () => {
-      using logger = new Logger("TestApp");
-      logger.task("Operating");
-      {
-        using operation = logger;
-      }
-      assertEquals(logger.#state, "completed");
-    },
-    `${magenta("- [TestApp]")} Operating ...\x1B[?25l`,
-    `\r${green("✓ [TestApp]")} Operating ... ${bold(green("done"))}\x1B[?25h\n`,
-  );
-  expectOutput(
-    () => {
-      using logger = new Logger("TestApp");
-      logger.task("Operating");
-      using operation = logger;
-      assertEquals(logger.#state, "started");
-    },
-    `${magenta("- [TestApp]")} Operating ...\x1B[?25l`,
-    `\r${green("✓ [TestApp]")} Operating ... ${bold(green("done"))}\x1B[?25h\n`,
   );
 });
