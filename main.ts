@@ -96,18 +96,38 @@ let n = 0;
 /**
  * @returns `true` if any task is running.
  */
-function render(): boolean {
+async function render(): Promise<boolean> {
+  if (!isInteractive()) return renderCI();
   let runningTasks = Task.list.filter((task) => task.state === "started");
   const isLogIncomplete = runningTasks.length > 0;
 
-  process.stdout.write("\x1B["+n.toString()+"A")
+  process.stdout.write("\x1B[" + n.toString() + "A");
   process.stdout.write("\x1B[2K");
-  const list = Task.sprint()
+  const list = Task.sprint();
   process.stdout.write(logStack);
-  n = Math.max(0, ((logStack+list).match(/\n/g) ?? []).length)
+  n = Math.max(0, ((logStack + list).match(new RegExp(`\\n|[^\\n]{${process.stdout.columns}}`, "g")) ?? []).length);
   logStack = "\n";
   process.stdout.write(list);
   return isLogIncomplete;
+}
+
+let loggedTasksStarted = new Set<Task>()
+let loggedTasks = new Set<Task>()
+async function renderCI(): Promise<boolean> {
+  for (const task of Task.list) {
+    if (task.state === "idle") continue;
+    if (task.state === "started") {
+      if (loggedTasksStarted.has(task)) continue;
+      loggedTasksStarted.add(task)
+    } else {
+      if (loggedTasks.has(task)) continue;
+      loggedTasks.add(task)
+    }
+
+    process.stdout.write(task.sprint()[task.state] + "\n")
+  }
+  const isLogIncomplete = loggedTasks.size !== Task.list.length;
+  return isLogIncomplete
 }
 
 const rendererMutex = createMutex();
@@ -115,11 +135,12 @@ const renderer = async function () {
   await rendererMutex.acquire();
   process.stdout.write("\x1B[?25l");
   for (;;) {
-    await delay(1000);
-    if (!render()) break;
+    await delay(0);
+    if (!await render()) break;
   }
-  render();
+  await render();
   process.stdout.write("\x1B[?25h");
+
   rendererMutex.release();
 };
 
