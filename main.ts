@@ -10,53 +10,217 @@ import {
 } from "@std/fmt/colors";
 import process from "node:process";
 import { formatWithOptions } from "node:util";
-import { createInterface } from "node:readline/promises";
 import isInteractive from "is-interactive";
+import { createMutex } from "@117/mutex";
+import { delay } from "@std/async/delay";
 
-const readline = createInterface(
-  process.stdin,
-  process.stdout,
-  undefined,
-  isInteractive(),
-);
+/**
+ * Formats the given arguments into a string.
+ * @param args - The arguments to format.
+ * @returns A formatted string.
+ */
+function format(...args: unknown[]): string {
+  const colors = getColorEnabled();
+  const [message, ...other] = args;
+  if (typeof message == "string") {
+    return formatWithOptions({ colors }, message, ...other);
+  }
+
+  return args.map((a) => formatWithOptions({ colors }, "%o", a)).join(" ");
+}
+
+/**
+ * Returns a formatted message string for a given level (no side effects).
+ * @param level - The log level: 'info', 'warn', 'error', 'success', or undefined/null for no level.
+ * @param args - The message and optional arguments to log.
+ */
+function sprintLevel(
+  prefix: string,
+  level?: LogLevel,
+  ...args: unknown[]
+): string {
+  switch (level) {
+    case "info":
+      prefix = blue("ℹ " + prefix);
+      break;
+    case "warn":
+      prefix = yellow("⚠ " + prefix);
+      break;
+    case "error":
+      prefix = red("✗ " + prefix);
+      break;
+    case "success":
+      prefix = green("✓ " + prefix);
+      break;
+    default:
+      prefix = prefix;
+      break;
+  }
+  return `${prefix} ${format(...args)}`;
+}
 
 /**
  * Enum representing the starting states of the logger.
  */
-export type LoggerStateStart = "started" | "idle";
+export type TaskStateStart = "started" | "idle";
 
 /**
  * Enum representing the end states of the logger.
  */
-export type LoggerStateEnd = "completed" | "aborted" | "failed" | "skipped";
+export type TaskStateEnd = "completed" | "aborted" | "failed" | "skipped";
 
 /**
  * Enum representing the possible states of the logger.
  */
-export type LoggerState = LoggerStateStart | LoggerStateEnd;
+export type TaskState = TaskStateStart | TaskStateEnd;
 
 /**
  * Logger levels for formatted console output.
  */
-export type LoggerLevel = "info" | "warn" | "error" | "success";
+export type LogLevel = "info" | "warn" | "error" | "success";
 
-export type TaskOptions = {
+export type LoggerOptions = {
+  prefix: string;
+  disabled?: boolean;
+};
+
+export type TaskOptions = LoggerOptions & {
   text: string;
   parent?: Task;
+  state?: TaskState;
+  padding?: string | TaskPadder;
 };
+
+let logStack: string = "\n";
+let n = 0;
+/**
+ * @returns `true` if any task is running.
+ */
+function render(): boolean {
+  let runningTasks = Task.list.filter((task) => task.state === "started");
+  const isLogIncomplete = runningTasks.length > 0;
+
+  process.stdout.write("\x1B["+n.toString()+"A")
+  process.stdout.write("\x1B[2K");
+  const list = Task.sprint()
+  process.stdout.write(logStack);
+  n = Math.max(0, ((logStack+list).match(/\n/g) ?? []).length)
+  logStack = "\n";
+  process.stdout.write(list);
+  return isLogIncomplete;
+}
+
+const rendererMutex = createMutex();
+const renderer = async function () {
+  await rendererMutex.acquire();
+  process.stdout.write("\x1B[?25l");
+  for (;;) {
+    await delay(1000);
+    if (!render()) break;
+  }
+  render();
+  process.stdout.write("\x1B[?25h");
+  rendererMutex.release();
+};
+
+type TaskPadder = (options: { task: Task; list: Task[] }) => string;
 
 /**
  * Logging interface for asynchronous procedure.
  */
-export class Task implements Logger, Disposable {
-  contructor(options: TaskOptions) {}
+export class Task implements Disposable {
+  static list: Task[] = [];
+
+  static sprint(): string {
+    const visibleTasks = Task.list.filter((task) => task.state !== "idle");
+    let result = "";
+    if (visibleTasks.length > 0) {
+      let prevTask: Task | undefined;
+      for (const task of visibleTasks) {
+        if (prevTask && task.parent && prevTask === task.parent) {
+          const padding = typeof task.padding === "string"
+            ? task.padding.repeat(task.depth())
+            : task.padding({ task, list: Task.list });
+          result += padding;
+        }
+        result += task.sprint()[task.state as keyof TaskSprint];
+        result += "\n";
+        prevTask = task;
+      }
+    }
+    return result;
+  }
+  state: TaskState = "idle";
+
+  prefix: string;
+  disabled: boolean;
+  text: string;
+  parent?: Task;
+  padding: string | TaskPadder;
+
+  constructor(options: TaskOptions) {
+    this.state = options.state ?? "idle";
+    this.prefix = options.prefix;
+    this.disabled = options.disabled ?? false;
+    this.text = options.text;
+    this.parent = options.parent;
+    this.padding = options.padding ?? "  | ";
+    if (this.parent) {
+      Task.list.splice(Task.list.indexOf(this.parent), 0, this);
+    } else {
+      Task.list.push(this);
+    }
+    renderer();
+  }
+
+  depth(): number {
+    let level = 0;
+    let current = this.parent;
+    while (current) {
+      level++;
+      current = current.parent;
+    }
+    return level;
+  }
+
+  /**
+   * Returns a formatted message string for the end of a continuous log.
+   */
+  sprint(): TaskSprint {
+    const left = ` ${this.text} ...`;
+    const taskSprint: TaskSprint = {
+      started: magenta("- " + this.prefix) + left,
+      aborted: sprintLevel(this.prefix, "warn", this.text) + " ... " +
+        bold(yellow("aborted")),
+      completed: sprintLevel(this.prefix, "success", this.text) + " ... " +
+        bold(green("done")),
+      failed: sprintLevel(this.prefix, "error", this.text) + " ... " +
+        bold(red("failed")),
+      skipped: gray("✓ " + this.prefix) + " " + this.text + " ... " +
+        gray("skipped"),
+    };
+    return taskSprint;
+  }
+
+  task(...args: unknown[]): Task {
+    const subtask = new Task({
+      text: format(...args),
+      prefix: this.prefix,
+    });
+    subtask.parent = this;
+    return subtask;
+  }
+
+  [Symbol.dispose]() {
+    this.state = "completed";
+  }
 }
 
 /**
  * Type representing the task sprint messages for the logger.
  */
 export type TaskSprint = {
-  [key in "started" | LoggerStateEnd]: string;
+  [key in "started" | TaskStateEnd]: string;
 };
 
 /**
@@ -74,46 +238,13 @@ export class Logger {
   public disabled: boolean;
 
   /**
-   * The current state of the continuous log.
-   */
-  #state: LoggerState = "idle";
-
-  /**
-   * Gets the current state of the logger.
-   * @returns The current state of the logger.
-   */
-  get state(): LoggerState {
-    return this.#state;
-  }
-
-  /**
-   * The prepared strings for the continuous log.
-   */
-  private taskSprint: TaskSprint = undefined as any;
-
-  /**
    * Creates a new Logger instance.
    * @param prefix - A string to prefix all log messages.
    * @param disabled - Whether the logger is disabled. Defaults to `false`.
    */
-  constructor(prefix: string, disabled = false) {
-    this.prefix = `[${prefix}]`;
-    this.disabled = disabled;
-  }
-
-  /**
-   * Formats the given arguments into a string.
-   * @param args - The arguments to format.
-   * @returns A formatted string.
-   */
-  format(...args: unknown[]): string {
-    const colors = getColorEnabled();
-    const [message, ...other] = args;
-    if (typeof message == "string") {
-      return formatWithOptions({ colors }, message, ...other);
-    }
-
-    return args.map((a) => formatWithOptions({ colors }, "%o", a)).join(" ");
+  constructor(options: LoggerOptions) {
+    this.prefix = `[${options.prefix}]`;
+    this.disabled = options.disabled ?? false;
   }
 
   /**
@@ -121,10 +252,7 @@ export class Logger {
    * @param message - The message to print.
    */
   print(message: string): void {
-    if (this.#state === "started") this.end("completed");
-
     if (this.disabled) return;
-
     process.stdout.write(message);
   }
 
@@ -141,7 +269,7 @@ export class Logger {
    * @param args - The message and optional arguments to log.
    */
   printf(...args: unknown[]): void {
-    const message = this.format(...args);
+    const message = format(...args);
     this.print(message);
   }
 
@@ -150,57 +278,8 @@ export class Logger {
    * @param args - The message and optional arguments to log.
    */
   printfln(...args: unknown[]): void {
-    const message = this.format(...args);
+    const message = format(...args);
     this.print(message + "\n");
-  }
-
-  /**
-   * Returns a formatted message string for a given level (no side effects).
-   * @param level - The log level: 'info', 'warn', 'error', 'success', or undefined/null for no level.
-   * @param args - The message and optional arguments to log.
-   */
-  sprintLevel(
-    level?: LoggerLevel,
-    ...args: unknown[]
-  ): string {
-    let prefix: string;
-    switch (level) {
-      case "info":
-        prefix = blue("ℹ " + this.prefix);
-        break;
-      case "warn":
-        prefix = yellow("⚠ " + this.prefix);
-        break;
-      case "error":
-        prefix = red("✗ " + this.prefix);
-        break;
-      case "success":
-        prefix = green("✓ " + this.prefix);
-        break;
-      default:
-        prefix = this.prefix;
-        break;
-    }
-    return `${prefix} ${this.format(...args)}`;
-  }
-
-  /**
-   * Returns a formatted message string for the end of a continuous log.
-   */
-  sprintTask(...args: unknown[]): TaskSprint {
-    const title = this.format(...args);
-    const left = ` ${title} ...`;
-    const taskSprint: TaskSprint = {
-      started: magenta("- " + this.prefix) + left,
-      aborted: this.sprintLevel("warn", title) + " ... " +
-        bold(yellow("aborted")),
-      completed: this.sprintLevel("success", title) + " ... " +
-        bold(green("done")),
-      failed: this.sprintLevel("error", title) + " ... " + bold(red("failed")),
-      skipped: gray("✓ " + this.prefix) + " " + title + " ... " +
-        gray("skipped"),
-    };
-    return taskSprint;
   }
 
   /**
@@ -208,7 +287,7 @@ export class Logger {
    * @param args - The message and optional arguments to log.
    */
   info(...args: unknown[]): void {
-    this.println(this.sprintLevel("info", ...args));
+    this.println(sprintLevel(this.prefix, "info", ...args));
   }
 
   /**
@@ -216,9 +295,7 @@ export class Logger {
    * @param args - The message and optional arguments to log.
    */
   error(...args: unknown[]): void {
-    if (this.#state === "started") this.end("failed");
-
-    this.println(this.sprintLevel("error", ...args));
+    this.println(sprintLevel(this.prefix, "error", ...args));
   }
 
   /**
@@ -226,7 +303,7 @@ export class Logger {
    * @param args - The message and optional arguments to log.
    */
   warn(...args: unknown[]): void {
-    this.println(this.sprintLevel("warn", ...args));
+    this.println(sprintLevel(this.prefix, "warn", ...args));
   }
 
   /**
@@ -234,9 +311,7 @@ export class Logger {
    * @param args - The message and optional arguments to log.
    */
   success(...args: unknown[]): void {
-    if (this.#state === "started") this.end("completed");
-
-    this.println(this.sprintLevel("success", ...args));
+    this.println(sprintLevel(this.prefix, "success", ...args));
   }
 
   /**
@@ -244,25 +319,10 @@ export class Logger {
    * Can be ended by the `end` and other log-methods such as `info` and `error`.
    * @param args - The message and optional arguments to log.
    */
-  start(...args: unknown[]): void {
-    if (this.#state === "started") this.end();
-    this.taskSprint = this.sprintTask(...args);
-    this.print(this.taskSprint.started + "\x1B[?25l");
-    this.#state = "started";
-  }
-
-  /**
-   * Ends any ongoing continuous log.
-   * Ignored if the `start` method was not called.
-   * @param stateEnd - The end state of the continuous log. Defaults to "completed".
-   */
-  end(stateEnd: LoggerStateEnd = "completed"): void {
-    if (this.#state !== "started") return;
-    this.#state = stateEnd;
-    this.printfln("\r" + this.taskSprint[stateEnd] + "\x1B[?25h");
-  }
-
-  [Symbol.dispose]() {
-    this.end();
+  task(...args: unknown[]): Task {
+    return new Task({
+      text: format(...args),
+      prefix: this.prefix,
+    });
   }
 }

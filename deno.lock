@@ -1,7 +1,9 @@
 {
   "version": "5",
   "specifiers": {
+    "jsr:@117/mutex@^1.0.8": "1.0.8",
     "jsr:@std/assert@^1.0.13": "1.0.13",
+    "jsr:@std/async@^1.0.14": "1.0.14",
     "jsr:@std/fmt@^1.0.8": "1.0.8",
     "jsr:@std/internal@^1.0.6": "1.0.10",
     "npm:@types/node@*": "24.1.0",
@@ -10,11 +12,17 @@
     "npm:is-interactive@2": "2.0.0"
   },
   "jsr": {
+    "@117/mutex@1.0.8": {
+      "integrity": "8f14ef3e124ae427c92f93951fbe36b5cfad3aa74f84d443b2acf3034683255d"
+    },
     "@std/assert@1.0.13": {
       "integrity": "ae0d31e41919b12c656c742b22522c32fb26ed0cba32975cb0de2a273cb68b29",
       "dependencies": [
         "jsr:@std/internal"
       ]
+    },
+    "@std/async@1.0.14": {
+      "integrity": "62e954a418652c704d37563a3e54a37d4cf0268a9dcaeac1660cc652880b5326"
     },
     "@std/fmt@1.0.8": {
       "integrity": "71e1fc498787e4434d213647a6e43e794af4fd393ef8f52062246e06f7e372b7"
@@ -79,7 +87,9 @@
   },
   "workspace": {
     "dependencies": [
+      "jsr:@117/mutex@^1.0.8",
       "jsr:@std/assert@^1.0.13",
+      "jsr:@std/async@^1.0.14",
       "jsr:@std/fmt@^1.0.8",
       "npm:@types/node@^24.1.0",
       "npm:badge-maker@^5.0.2",
