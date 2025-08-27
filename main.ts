@@ -112,8 +112,10 @@ export type TaskOptions = LoggerOptions & {
   padding?: string | TaskRunner<string>;
 };
 
+type SetOptional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+export type SubtaskOptions = SetOptional<TaskOptions, "prefix">;
+
 let prevLog: string = "";
-let logStack: string = "";
 let newLines = 0;
 let loggedTasksStarted = new Set<Task>();
 let loggedTasks = new Set<Task>();
@@ -126,24 +128,20 @@ async function render(): Promise<boolean> {
   const isLogIncomplete = runningTasks.length > 0;
 
   const list = Task.sprintList();
-  const log = logStack + list;
-  logStack = "";
-  const changed = prevLog !== log;
+  const changed = prevLog !== list;
   if (changed) process.stdout.write("\x1B[1A\x1B[2K".repeat(newLines));
   newLines = (list.match(
-      new RegExp(`\\n|[^\\n]{${process.stdout.columns}}`, "g"),
-    ) ?? []).length
-  
+    new RegExp(`\\n|[^\\n]{${process.stdout.columns}}`, "g"),
+  ) ?? []).length;
+
   if (changed) {
-    process.stdout.write(log);
+    process.stdout.write(list);
   }
-  prevLog = log;
+  prevLog = list;
   return isLogIncomplete;
 }
 
 async function renderCI(): Promise<boolean> {
-  process.stdout.write(logStack);
-  logStack = "";
   for (const task of Task.list) {
     if (task.state === "idle") continue;
     if (task.state === "started") {
@@ -277,7 +275,7 @@ export class Task implements Disposable {
   /**
    * Creates a subtask under the current task.
    */
-  task(options: TaskOptions): Task {
+  task(options: SubtaskOptions): Task {
     const subtask = new Task({
       prefix: this.prefix,
       ...options,
@@ -328,7 +326,10 @@ export class Logger {
    */
   print(message: string): void {
     if (this.disabled) return;
-    logStack += message;
+    rendererMutex.acquire().then(() => {
+      process.stdout.write(message);
+      rendererMutex.release();
+    });
   }
 
   /**
@@ -395,7 +396,7 @@ export class Logger {
    * Can be ended by the `end` and other log-methods such as `info` and `error`.
    * @param args - The message and optional arguments to log.
    */
-  task(options: TaskOptions): Task {
+  task(options: SubtaskOptions): Task {
     return new Task({
       prefix: this.prefix,
       ...options,
