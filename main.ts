@@ -11,7 +11,7 @@ import {
 import process from "node:process";
 import { formatWithOptions } from "node:util";
 import isInteractive from "is-interactive";
-import { createMutex } from "@117/mutex";
+import { createMutex, type Mutex } from "@117/mutex";
 import { delay } from "@std/async/delay";
 
 /**
@@ -178,7 +178,7 @@ const renderer = async function () {
 export class Task implements Disposable {
   static list: Task[] = [];
 
-  static mutex = createMutex();
+  static mutex: Mutex = createMutex();
 
   static sprintList(): string {
     Task.list.sort((a, b) => a.parent === b ? 1 : b.parent === a ? -1 : 0);
