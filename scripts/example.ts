@@ -1,7 +1,7 @@
 import { Logger } from "../main.ts";
+import { delay } from "@std/async";
 
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-using logger = new Logger("@m234/logger");
+const logger = new Logger({ prefix: "@m234/logger" });
 
 logger.info("Info message.");
 logger.warn("Warn message.");
@@ -10,15 +10,21 @@ logger.success("Success message.");
 
 logger.println("");
 
-logger.start("Action");
-await wait(1500);
-logger.end("completed");
-logger.start("Action");
-await wait(1500);
-logger.end("skipped");
-logger.start("Action");
-await wait(1500);
-logger.end("aborted");
-logger.start("Action");
-await wait(1500);
-logger.end("failed");
+await delay(500);
+
+let task1 = logger.task({ text: "Processing 1/3" }).start();
+setTimeout(() => task1.end("completed"), 3000);
+
+let task2 = logger.task({ text: "Processing 2/3" }).start();
+setTimeout(() => task2.end("aborted"), 7000);
+
+let task3 = logger.task({ text: "Processing 3/3" }).start();
+let task31 = logger.task({ text: "Sub-task", indent: 1 }).start();
+let task311 = logger.task({ text: "Sub-sub-task", indent: 2 }).start();
+setTimeout(() => task311.end("completed"), 200);
+setTimeout(() => task31.end("completed"), 200);
+setTimeout(() => {
+  task3.end("failed");
+}, 4000);
+
+logger.task({ text: "Thinking" }).startRunner(() => "skipped");

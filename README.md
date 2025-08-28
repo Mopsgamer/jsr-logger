@@ -10,82 +10,66 @@ A colorful logger with the ability to log "Processing ... done".
 
 ## Usage
 
-Here is an example of how to use the Logger:
+### Simple printing
+
+Basic logging and formatted output for your application:
 
 ```ts
-import { Logger } from "@m234/logger";
-import ora from "ora";
+import { format, Logger } from "@m234/logger";
 
-using logger = new Logger("MyApp");
+const logger = new Logger({ prefix: "MyApp" });
 
 logger.print("Hello, World!");
 logger.println("Hello, World!");
-logger.printf("Hello, World! %o", true);
-logger.printfln("Hello, World! %o", true);
+logger.print(format("Hello, World! %o", true));
 
 logger.info("This is an informational message.");
 logger.warn("This is a warning.");
 logger.error("This is an error.");
 logger.success("This is a success message.");
-// Note: There are no 'log' (use 'printfln'), 'debug', or 'verbose' methods.
-
-logger.start("Operating");
-logger.end(); // Same as logger.end("completed");
-// Output: 🛈 [MyApp] Operating ... done
-logger.end("skipped");
-// Output: ✓ [MyApp] Operating ... skipped
-logger.end("failed");
-// Output: ✗ [MyApp] Operating ... failed
-logger.end("aborted");
-// Output: ⚠ [MyApp] Operating ... aborted
 ```
 
-### Logging with Formatting
+### Task printing
 
-You can log messages without a new line or prefix, but with formatting:
+Track the progress and result of long-running or multi-step operations. Task
+printing provides visual feedback for ongoing, successful, skipped, failed, or
+aborted tasks:
 
 ```ts
 import { Logger } from "@m234/logger";
 
-using logger = new Logger("MyApp");
+const logger = new Logger({ prefix: "MyApp" });
+using task = logger.task({
+  text: "Operating",
+  disposeState: "completed",
+}).start();
 
-logger.printf("Starting %s ... ", "machine");
-logger.println("done");
-// Output: Starting machine ... done
+// Output: - MyApp Operating ...
+task.end("completed");
+// Output: ✓ MyApp Operating ... done
+task.end("skipped");
+// Output: ✓ MyApp Operating ... skipped
+task.end("failed");
+// Output: ✗ MyApp Operating ... failed
+task.end("aborted");
+// Output: ⚠ MyApp Operating ... aborted
 ```
 
-### Continuous Logging with `start/end`
+### Task runner
 
-For more control, use the `start/end` methods:
+Automate task execution and handle asynchronous operations with task runners.
+This feature allows you to run a function as a task, automatically updating the
+task status based on the function's result:
 
 ```ts
 import { Logger } from "@m234/logger";
+import { delay } from "@std/async/delay";
 
-using logger = new Logger("MyApp");
-
-logger.start("Operating");
-// Output: 🛈 [MyApp] Operating ...
-logger.end(); // Clears the line
-// Output: ✓ [MyApp] Operating ... done
+const logger = new Logger({ prefix: "MyApp" });
+logger.task({
+  text: "Operating",
+}).startRunner(async ({ task }) => {
+  await delay(1000);
+  return "completed";
+});
 ```
-
-The `error`, `success`, `info`, and `warn` methods can also be used to end a
-continuous log. All methods except `error` will mark the log as completed:
-
-```ts
-import { Logger } from "@m234/logger";
-
-using logger = new Logger("MyApp");
-
-logger.start("Operating");
-// Output: - [MyApp] Operating ...
-logger.error("An error occurred");
-logger.end("completed"); // Ignored
-// Output: ✗ [MyApp] Operating ... failed
-// Output: ✗ [MyApp] An error occurred
-```
-
-> [!WARNING]
-> `logger.end` will **not** be automatically called before `console.log` or
-> `stdout/stderr.write`. Please ensure you use `logger.end` or other log methods
-> to properly end a continuous log.

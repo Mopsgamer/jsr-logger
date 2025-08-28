@@ -1,19 +1,28 @@
 {
   "version": "5",
   "specifiers": {
-    "jsr:@std/assert@^1.0.13": "1.0.13",
+    "jsr:@117/mutex@^1.0.8": "1.0.8",
+    "jsr:@std/assert@*": "1.0.14",
+    "jsr:@std/async@^1.0.14": "1.0.14",
     "jsr:@std/fmt@^1.0.8": "1.0.8",
-    "jsr:@std/internal@^1.0.6": "1.0.10",
-    "npm:@types/node@*": "24.1.0",
-    "npm:@types/node@^24.1.0": "24.1.0",
-    "npm:badge-maker@^5.0.2": "5.0.2"
+    "jsr:@std/internal@^1.0.10": "1.0.10",
+    "npm:@types/node@*": "24.2.0",
+    "npm:@types/node@^24.1.0": "24.3.0",
+    "npm:badge-maker@*": "5.0.2",
+    "npm:is-interactive@2": "2.0.0"
   },
   "jsr": {
-    "@std/assert@1.0.13": {
-      "integrity": "ae0d31e41919b12c656c742b22522c32fb26ed0cba32975cb0de2a273cb68b29",
+    "@117/mutex@1.0.8": {
+      "integrity": "8f14ef3e124ae427c92f93951fbe36b5cfad3aa74f84d443b2acf3034683255d"
+    },
+    "@std/assert@1.0.14": {
+      "integrity": "68d0d4a43b365abc927f45a9b85c639ea18a9fab96ad92281e493e4ed84abaa4",
       "dependencies": [
         "jsr:@std/internal"
       ]
+    },
+    "@std/async@1.0.14": {
+      "integrity": "62e954a418652c704d37563a3e54a37d4cf0268a9dcaeac1660cc652880b5326"
     },
     "@std/fmt@1.0.8": {
       "integrity": "71e1fc498787e4434d213647a6e43e794af4fd393ef8f52062246e06f7e372b7"
@@ -23,8 +32,14 @@
     }
   },
   "npm": {
-    "@types/node@24.1.0": {
-      "integrity": "sha512-ut5FthK5moxFKH2T1CUOC6ctR67rQRvvHdFLCD2Ql6KXmMuCrjsSsRI9UsLCm9M18BMwClv4pn327UvB7eeO1w==",
+    "@types/node@24.2.0": {
+      "integrity": "sha512-3xyG3pMCq3oYCNg7/ZP+E1ooTaGB4cG8JWRsqqOYQdbWNY4zbaV0Ennrd7stjiJEFZCaybcIgpTjJWHRfBSIDw==",
+      "dependencies": [
+        "undici-types"
+      ]
+    },
+    "@types/node@24.3.0": {
+      "integrity": "sha512-aPTXCrfwnDLj4VvXrm+UUCQjNEvJgNA8s5F1cvwQU+3KNltTOkBm1j30uNLyqqPNe7gE3KFzImYoZEfLhp4Yow==",
       "dependencies": [
         "undici-types"
       ]
@@ -69,16 +84,20 @@
     "css-unit-converter@1.1.2": {
       "integrity": "sha512-IiJwMC8rdZE0+xiEZHeru6YoONC4rfPMqGm2W85jMIbkFvv5nFTwJVFHam2eFrN6txmoUYFAFXiv8ICVeTO0MA=="
     },
-    "undici-types@7.8.0": {
-      "integrity": "sha512-9UJ2xGDvQ43tYyVMpuHlsgApydB8ZKfVYTsLDhXkFL/6gfkp+U8xTGdh8pMJv1SpZna0zxG1DwsKZsreLbXBxw=="
+    "is-interactive@2.0.0": {
+      "integrity": "sha512-qP1vozQRI+BMOPcjFzrjXuQvdak2pHNUMZoeG2eRbiSqyvbEf/wQtEOTOX1guk6E3t36RkaqiSt8A/6YElNxLQ=="
+    },
+    "undici-types@7.10.0": {
+      "integrity": "sha512-t5Fy/nfn+14LuOc2KNYg75vZqClpAiqscVvMygNnlsHBFpSXdJaYtXMcdNLpl/Qvc3P2cB3s6lOV51nqsFq4ag=="
     }
   },
   "workspace": {
     "dependencies": [
-      "jsr:@std/assert@^1.0.13",
+      "jsr:@117/mutex@^1.0.8",
+      "jsr:@std/async@^1.0.14",
       "jsr:@std/fmt@^1.0.8",
       "npm:@types/node@^24.1.0",
-      "npm:badge-maker@^5.0.2"
+      "npm:is-interactive@2"
     ]
   }
 }

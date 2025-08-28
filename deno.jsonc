@@ -8,10 +8,11 @@
       "dependencies": ["prepare"]
     },
     "prepare": {
+      "command": "deno fmt ./assets/",
       "dependencies": ["lint", "format", "test"]
     },
     "lint": "deno lint",
-    "test": "deno test; deno fmt ./assets/",
+    "test": "deno test --coverage",
     "format": {
       "command": "deno fmt",
       "dependencies": ["badge:tests"]
@@ -40,9 +41,10 @@
     ".": "./main.ts"
   },
   "imports": {
-    "@std/assert": "jsr:@std/assert@^1.0.13",
+    "@117/mutex": "jsr:@117/mutex@^1.0.8",
+    "@std/async": "jsr:@std/async@^1.0.14",
     "@std/fmt": "jsr:@std/fmt@^1.0.8",
     "@types/node": "npm:@types/node@^24.1.0",
-    "badge-maker": "npm:badge-maker@^5.0.2"
+    "is-interactive": "npm:is-interactive@^2.0.0"
   }
 }
