@@ -27,9 +27,5 @@ setTimeout(() => {
   task3.end("failed");
 }, 4000);
 
-let task11 = logger.task({ text: "Thinking" }).startRunner(() => "skipped");
+logger.task({ text: "Thinking" }).startRunner(() => "skipped");
 
-await delay(1000);
-logger.success("DOing");
-await delay(8000);
-logger.success("DONE");

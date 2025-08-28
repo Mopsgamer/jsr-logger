@@ -14,14 +14,14 @@ Deno.test("render", async () => {
   };
   render();
   assertEquals(output, []);
-  new Task({ prefix: "[TestApp]", text: "Operating" });
-  new Task({ prefix: "[TestApp]", text: "Operating" }).start();
-  new Task({ prefix: "[TestApp]", text: "Operating" }).start().end("failed");
+  new Task({ prefix: "TestApp", text: "Operating" });
+  new Task({ prefix: "TestApp", text: "Operating" }).start();
+  new Task({ prefix: "TestApp", text: "Operating" }).start().end("failed");
   render();
   assertEquals(output, [
     "",
-    magenta("- [TestApp]") + " Operating ...\n" +
-    red("✗ [TestApp]") + " Operating ... " + bold(red("failed")) + "\n",
+    magenta("- TestApp") + " Operating ...\n" +
+    red("✗ TestApp") + " Operating ... " + bold(red("failed")) + "\n",
   ]);
   process.stdout.write = originalWrite;
 });
@@ -29,7 +29,7 @@ Deno.test("render", async () => {
 Deno.test("renderCI", async () => {
   list.length = 0;
   assertEquals(await renderCI(), true);
-  const task = new Task({ prefix: "[TestApp]", text: "Operating" });
+  const task = new Task({ prefix: "TestApp", text: "Operating" });
   assertEquals(await renderCI(), false);
   task.start();
   assertEquals(await renderCI(), false);
@@ -39,9 +39,9 @@ Deno.test("renderCI", async () => {
 
 Deno.test("renderer", async () => {
   renderer(true);
-  new Task({ prefix: "[TestApp]", text: "Operating" });
-  new Task({ prefix: "[TestApp]", text: "Operating" }).start();
-  new Task({ prefix: "[TestApp]", text: "Operating" }).start().end("failed");
+  new Task({ prefix: "TestApp", text: "Operating" });
+  new Task({ prefix: "TestApp", text: "Operating" }).start();
+  new Task({ prefix: "TestApp", text: "Operating" }).start().end("failed");
   const output: string[] = [];
   const originalWrite = process.stdout.write;
   process.stdout.write = (data: string): boolean => {
@@ -51,8 +51,8 @@ Deno.test("renderer", async () => {
   await mutex.acquire();
   assertEquals(output, [
     "\x1b[?25l",
-    magenta("- [TestApp]") + " Operating ...\n",
-    red("✗ [TestApp]") + " Operating ... " + bold(red("failed")) + "\n",
+    magenta("- TestApp") + " Operating ...\n",
+    red("✗ TestApp") + " Operating ... " + bold(red("failed")) + "\n",
     "\x1b[?25h",
   ]);
   process.stdout.write = originalWrite;
