@@ -1,7 +1,7 @@
 {
   "name": "@m234/logger",
   "description": "A colorful logger with the ability to log \"Processing ... done\".",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "tasks": {
     "publish": {
       "command": "deno publish",
