@@ -160,9 +160,8 @@ async function renderCI(): Promise<boolean> {
   return isLogIncomplete;
 }
 
-const rendererMutex = createMutex();
 const renderer = async function () {
-  await rendererMutex.acquire();
+  await Task.mutex.acquire();
   process.stdout.write("\x1B[?25l");
   for (;;) {
     await delay(0);
@@ -170,7 +169,7 @@ const renderer = async function () {
   }
   await render();
   process.stdout.write("\x1B[?25h");
-  rendererMutex.release();
+  Task.mutex.release();
 };
 
 /**
@@ -178,6 +177,8 @@ const renderer = async function () {
  */
 export class Task implements Disposable {
   static list: Task[] = [];
+
+  static mutex = createMutex();
 
   static sprintList(): string {
     Task.list.sort((a, b) => a.parent === b ? 1 : b.parent === a ? -1 : 0);
@@ -324,20 +325,19 @@ export class Logger {
    * Prints a message to the console without a new line. Ends any ongoing continuous log as a success.
    * @param message - The message to print.
    */
-  print(message: string): void {
+  async print(message: string): Promise<void> {
     if (this.disabled) return;
-    rendererMutex.acquire().then(() => {
-      process.stdout.write(message);
-      rendererMutex.release();
-    });
+    await Task.mutex.acquire();
+    process.stdout.write(message);
+    Task.mutex.release();
   }
 
   /**
    * Same as {@link print}, but adds new line.
    * @param message - The message to print.
    */
-  println(message: string): void {
-    this.print(message + "\n");
+  println(message: string): Promise<void> {
+    return this.print(message + "\n");
   }
 
   /**
@@ -363,32 +363,32 @@ export class Logger {
    * Logs an informational message.
    * @param args - The message and optional arguments to log.
    */
-  info(message: string): void {
-    this.println(this.sprintLevel(message, "info"));
+  info(message: string): Promise<void> {
+    return this.println(this.sprintLevel(message, "info"));
   }
 
   /**
    * Logs an error message. Ends any ongoing continuous log as a failure.
    * @param args - The message and optional arguments to log.
    */
-  error(message: string): void {
-    this.println(this.sprintLevel(message, "error"));
+  error(message: string): Promise<void> {
+    return this.println(this.sprintLevel(message, "error"));
   }
 
   /**
    * Logs a warning message.
    * @param args - The message and optional arguments to log.
    */
-  warn(message: string): void {
-    this.println(this.sprintLevel(message, "warn"));
+  warn(message: string): Promise<void> {
+    return this.println(this.sprintLevel(message, "warn"));
   }
 
   /**
    * Logs a success message.
    * @param args - The message and optional arguments to log.
    */
-  success(message: string): void {
-    this.println(this.sprintLevel(message, "success"));
+  success(message: string): Promise<void> {
+    return this.println(this.sprintLevel(message, "success"));
   }
 
   /**
