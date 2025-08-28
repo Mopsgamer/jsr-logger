@@ -24,12 +24,12 @@ let task311 = logger.task({ text: "Sub-sub-task" }).start();
 setTimeout(() => task311.end("completed"), 200);
 setTimeout(() => task31.end("completed"), 200);
 setTimeout(() => {
-  task3.end("skipped");
+  task3.end("failed");
 }, 4000);
 
 let task11 = logger.task({ text: "Thinking" }).startRunner(() => "skipped");
 
 await delay(1000);
 logger.success("DOing");
-await delay(9000);
+await delay(8000);
 logger.success("DONE");
