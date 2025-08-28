@@ -2,11 +2,11 @@ import isInteractive from "is-interactive";
 import { Task } from "./main.ts";
 import { delay } from "@std/async/delay";
 import { createMutex, type Mutex } from "@117/mutex";
+import process from "node:process";
 
 export const list: Task[] = [];
 export const mutex: Mutex = createMutex();
 let prevLog: string = "";
-let newLines = 0;
 let loggedTasksStarted = new Set<Task>();
 let loggedTasks = new Set<Task>();
 /**
@@ -18,10 +18,8 @@ export async function render(): Promise<boolean> {
 
   const lst = Task.sprintList();
   const changed = prevLog !== lst;
+  const newLines = newLineCount(prevLog, process.stdout.columns)
   if (changed) process.stdout.write("\x1B[1A\x1B[2K".repeat(newLines));
-  newLines = (lst.match(
-    new RegExp(`\\n|[^\\n]{${process.stdout.columns}}`, "g"),
-  ) ?? []).length;
 
   if (changed) {
     process.stdout.write(lst);
@@ -67,4 +65,10 @@ export async function renderer(force = false) {
   process.stdout.write("\x1B[?25h");
   list;
   mutex.release();
+}
+
+export function newLineCount(text: string, width: number): number {
+  return (text.match(
+    new RegExp(`\\n|.{,${width}}`, "g"),
+  ) ?? []).length;
 }
