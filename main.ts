@@ -10,9 +10,8 @@ import {
 } from "@std/fmt/colors";
 import process from "node:process";
 import { formatWithOptions } from "node:util";
-import isInteractive from "is-interactive";
 import { createMutex, type Mutex } from "@117/mutex";
-import { delay } from "@std/async/delay";
+import { renderer } from "./render.ts";
 
 /**
  * Formats the given arguments into a string.
@@ -65,6 +64,7 @@ export function sprintLevel(
 export function sprintTask(prefix: string, text: string): TaskSprint {
   const left = ` ${text} ...`;
   const taskSprint: TaskSprint = {
+    idle: "",
     started: magenta("- " + prefix) + left,
     aborted: sprintLevel(prefix, text, "warn") + " ... " +
       bold(yellow("aborted")),
@@ -93,7 +93,9 @@ export type TaskStateEnd = "completed" | "aborted" | "failed" | "skipped";
  */
 export type TaskState = TaskStateStart | TaskStateEnd;
 
-type TaskRunner<R> = (options: { task: Task; list: Task[] }) => R;
+export type TaskRunner<R> = (options: { task: Task; list: Task[] }) => R;
+
+export type TaskPadding = string | TaskRunner<string>;
 
 /**
  * Logger levels for formatted console output.
@@ -105,72 +107,15 @@ export type LoggerOptions = {
   disabled?: boolean;
 };
 
-export type TaskOptions = LoggerOptions & {
+export type TaskOptions = Omit<LoggerOptions, "disabled"> & {
   text: string;
   parent?: Task;
   state?: TaskState;
-  padding?: string | TaskRunner<string>;
+  padding?: TaskPadding;
 };
 
 type SetOptional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 export type SubtaskOptions = SetOptional<TaskOptions, "prefix">;
-
-let prevLog: string = "";
-let newLines = 0;
-let loggedTasksStarted = new Set<Task>();
-let loggedTasks = new Set<Task>();
-/**
- * @returns `true` if any task is running.
- */
-async function render(): Promise<boolean> {
-  if (!isInteractive()) return renderCI();
-  let runningTasks = Task.list.filter((task) => task.state === "started");
-  const isLogIncomplete = runningTasks.length > 0;
-
-  const list = Task.sprintList();
-  const changed = prevLog !== list;
-  if (changed) process.stdout.write("\x1B[1A\x1B[2K".repeat(newLines));
-  newLines = (list.match(
-    new RegExp(`\\n|[^\\n]{${process.stdout.columns}}`, "g"),
-  ) ?? []).length;
-
-  if (changed) {
-    process.stdout.write(list);
-  }
-  prevLog = list;
-  return isLogIncomplete;
-}
-
-async function renderCI(): Promise<boolean> {
-  for (const task of Task.list) {
-    if (task.state === "idle") continue;
-    if (task.state === "started") {
-      if (loggedTasksStarted.has(task)) continue;
-      loggedTasksStarted.add(task);
-    } else {
-      if (loggedTasks.has(task)) continue;
-      loggedTasks.add(task);
-    }
-
-    process.stdout.write(task.sprint()[task.state] + "\n");
-  }
-  const isLogIncomplete = Task.list.every((task) =>
-    loggedTasks.has(task) && loggedTasksStarted.has(task)
-  );
-  return isLogIncomplete;
-}
-
-const renderer = async function () {
-  await Task.mutex.acquire();
-  process.stdout.write("\x1B[?25l");
-  for (;;) {
-    await delay(0);
-    if (!await render()) break;
-  }
-  await render();
-  process.stdout.write("\x1B[?25h");
-  Task.mutex.release();
-};
 
 /**
  * Logging interface for asynchronous procedure.
@@ -193,7 +138,7 @@ export class Task implements Disposable {
             : task.padding({ task, list: Task.list });
           result += padding;
         }
-        result += task.sprint()[task.state as keyof TaskSprint];
+        result += task.sprint();
         result += "\n";
         prevTask = task;
       }
@@ -202,25 +147,20 @@ export class Task implements Disposable {
   }
 
   state: TaskState = "idle";
+  disposeState: TaskState = "completed";
 
   prefix: string;
-  disabled: boolean;
   text: string;
   parent?: Task;
-  padding: string | TaskRunner<string>;
+  padding: TaskPadding;
 
   constructor(options: TaskOptions) {
     this.state = options.state ?? "idle";
     this.prefix = options.prefix;
-    this.disabled = options.disabled ?? false;
     this.text = options.text;
     this.parent = options.parent;
     this.padding = options.padding ?? "  | ";
-    if (this.parent) {
-      Task.list.splice(Task.list.indexOf(this.parent) + 1, 0, this);
-    } else {
-      Task.list.push(this);
-    }
+    Task.list.push(this);
     renderer();
   }
 
@@ -237,15 +177,14 @@ export class Task implements Disposable {
   /**
    * Returns a formatted message string for the end of a continuous log.
    */
-  sprint(): TaskSprint {
-    return sprintTask(this.prefix, this.text);
+  sprint(): string {
+    return sprintTask(this.prefix, this.text)[this.state];
   }
 
   /**
    * Sets the task state to "started" and begins rendering.
    */
   start(): Task {
-    if (this.disabled) return this;
     this.state = "started";
     return this;
   }
@@ -254,7 +193,6 @@ export class Task implements Disposable {
    * Sets the task state to "completed" and ends rendering.
    */
   end(state: TaskStateEnd): Task {
-    if (this.disabled) return this;
     this.state = state;
     return this;
   }
@@ -262,14 +200,16 @@ export class Task implements Disposable {
   /**
    * Runs the task with a given runner function.
    */
-  startRunner(runner: TaskRunner<TaskStateEnd | Promise<TaskStateEnd>>): Task {
+  async startRunner(
+    runner:
+      | TaskRunner<TaskStateEnd | Promise<TaskStateEnd>>
+      | Promise<TaskStateEnd>,
+  ): Promise<Task> {
     this.state = "started";
-    const state = runner({ task: this, list: Task.list });
-    if (typeof state === "string") {
-      this.state = state;
-    } else {
-      state.then((state) => this.state = state);
-    }
+    const state = runner instanceof Promise
+      ? await runner
+      : await runner({ task: this, list: Task.list });
+    this.state = state;
     return this;
   }
 
@@ -279,6 +219,7 @@ export class Task implements Disposable {
   task(options: SubtaskOptions): Task {
     const subtask = new Task({
       prefix: this.prefix,
+      padding: this.padding,
       ...options,
       parent: this,
     });
@@ -286,7 +227,7 @@ export class Task implements Disposable {
   }
 
   [Symbol.dispose]() {
-    this.state = "completed";
+    this.state = this.disposeState;
   }
 }
 
@@ -294,7 +235,7 @@ export class Task implements Disposable {
  * Type representing the task sprint messages for the logger.
  */
 export type TaskSprint = {
-  [key in "started" | TaskStateEnd]: string;
+  [key in TaskState]: string;
 };
 
 /**
