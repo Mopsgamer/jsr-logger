@@ -12,7 +12,7 @@ import { format, Logger, Task, type TaskStateEnd } from "./main.ts";
 import { assertEquals } from "jsr:@std/assert";
 import process from "node:process";
 import { stripVTControlCharacters } from "node:util";
-import { state } from "./render.ts";
+import { list, mutex, state } from "./render.ts";
 
 state.noLoop = true;
 
@@ -29,14 +29,14 @@ function expectOutput(
     };
 
     await startup();
-    await Task.mutex.acquire();
+    await mutex.acquire();
     try {
       for (const [i, line] of lineList.entries()) {
         assertEquals(output[i], line);
       }
     } finally {
       process.stdout.write = originalWrite;
-      Task.mutex.release();
+      mutex.release();
     }
   };
 }
@@ -166,13 +166,13 @@ Deno.test(
 Deno.test("Logger.start is completed", async () => {
   const logger = new Logger({ prefix: "TestApp" });
   const task = logger.task({ text: "Operating" }).end("completed");
-  await Task.mutex.acquire();
+  await mutex.acquire();
   assertEquals(task.state, "completed");
-  Task.mutex.release();
+  mutex.release();
 });
 
 Deno.test("task.sprint", () => {
-  Task.list.length = 0;
+  list.length = 0;
   const logger = new Logger({ prefix: "TestApp" });
   const task = logger.task({ text: "Operating" }).start();
   assertEquals(
@@ -182,54 +182,27 @@ Deno.test("task.sprint", () => {
 });
 
 Deno.test("Task.sprintList", async () => {
-  Task.list.length = 0;
+  list.length = 0;
   const logger = new Logger({ prefix: "TestApp" });
   const task0 = logger.task({ text: "0" }).start();
-  assertEquals(Task.list[0], task0);
+  assertEquals(list[0], task0);
   assertEquals(
     Task.sprintList(),
     magenta("- [TestApp]") + " 0 ...\n",
   );
-  const task1 = logger.task({ text: "1", parent: task0 }).start();
-  logger.task({ text: "2", parent: task1 }).start();
+  logger.task({ text: "1" }).start();
+  logger.task({ text: "2" }).start();
   assertEquals(
     Task.sprintList(),
     magenta("- [TestApp]") + " 0 ...\n" +
-      "  | " + magenta("- [TestApp]") + " 1 ...\n" +
-      "  |   | " + magenta("- [TestApp]") + " 2 ...\n",
-  );
-});
-
-Deno.test("Task.sprintList padding", async () => {
-  Task.list.length = 0;
-  const logger = new Logger({ prefix: "TestApp" });
-  const task0 = logger.task({
-    text: "0",
-    padding: ({ task }) => "  > ".repeat(task.depth()),
-  }).start();
-  const task1 = task0.task({ text: "1" }).start();
-  task1.task({ text: "2" }).start();
-  assertEquals(
-    Task.sprintList(),
-    magenta("- [TestApp]") + " 0 ...\n" +
-      "  > " + magenta("- [TestApp]") + " 1 ...\n" +
-      "  >   > " + magenta("- [TestApp]") + " 2 ...\n",
+      magenta("- [TestApp]") + " 1 ...\n" +
+      magenta("- [TestApp]") + " 2 ...\n",
   );
 });
 
 Deno.test("Task.sprintList empty", () => {
-  Task.list.length = 0;
+  list.length = 0;
   assertEquals(Task.sprintList(), "");
-});
-
-Deno.test("task.depth", () => {
-  const logger = new Logger({ prefix: "TestApp" });
-  const task0 = logger.task({ text: "0" }).start();
-  const task1 = logger.task({ text: "1", parent: task0 }).start();
-  const task2 = logger.task({ text: "2", parent: task1 }).start();
-  assertEquals(task0.depth(), 0);
-  assertEquals(task1.depth(), 1);
-  assertEquals(task2.depth(), 2);
 });
 
 Deno.test("task.startRunner", async () => {

@@ -10,8 +10,7 @@ import {
 } from "@std/fmt/colors";
 import process from "node:process";
 import { formatWithOptions } from "node:util";
-import { createMutex, type Mutex } from "@117/mutex";
-import { renderer } from "./render.ts";
+import { list, mutex, renderer } from "./render.ts";
 
 /**
  * Formats the given arguments into a string.
@@ -95,8 +94,6 @@ export type TaskState = TaskStateStart | TaskStateEnd;
 
 export type TaskRunner<R> = (options: { task: Task; list: Task[] }) => R;
 
-export type TaskPadding = string | TaskRunner<string>;
-
 /**
  * Logger levels for formatted console output.
  */
@@ -109,9 +106,7 @@ export type LoggerOptions = {
 
 export type TaskOptions = Omit<LoggerOptions, "disabled"> & {
   text: string;
-  parent?: Task;
   state?: TaskState;
-  padding?: TaskPadding;
 };
 
 type SetOptional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
@@ -121,26 +116,12 @@ export type SubtaskOptions = SetOptional<TaskOptions, "prefix">;
  * Logging interface for asynchronous procedure.
  */
 export class Task implements Disposable {
-  static list: Task[] = [];
-
-  static mutex: Mutex = createMutex();
-
   static sprintList(): string {
-    Task.list.sort((a, b) => a.parent === b ? 1 : b.parent === a ? -1 : 0);
-    const visibleTasks = Task.list.filter((task) => task.state !== "idle");
+    const visibleTasks = list.filter((task) => task.state !== "idle");
     let result = "";
     if (visibleTasks.length > 0) {
-      let prevTask: Task | undefined;
       for (const task of visibleTasks) {
-        if (prevTask && task.parent && prevTask === task.parent) {
-          const padding = typeof task.padding === "string"
-            ? task.padding.repeat(task.depth())
-            : task.padding({ task, list: Task.list });
-          result += padding;
-        }
-        result += task.sprint();
-        result += "\n";
-        prevTask = task;
+        result += task.sprint() + "\n";
       }
     }
     return result;
@@ -151,27 +132,13 @@ export class Task implements Disposable {
 
   prefix: string;
   text: string;
-  parent?: Task;
-  padding: TaskPadding;
 
   constructor(options: TaskOptions) {
     this.state = options.state ?? "idle";
     this.prefix = options.prefix;
     this.text = options.text;
-    this.parent = options.parent;
-    this.padding = options.padding ?? "  | ";
-    Task.list.push(this);
+    list.push(this);
     renderer();
-  }
-
-  depth(): number {
-    let level = 0;
-    let current = this.parent;
-    while (current) {
-      level++;
-      current = current.parent;
-    }
-    return level;
   }
 
   /**
@@ -208,22 +175,9 @@ export class Task implements Disposable {
     this.state = "started";
     const state = runner instanceof Promise
       ? await runner
-      : await runner({ task: this, list: Task.list });
+      : await runner({ task: this, list: [...list] });
     this.state = state;
     return this;
-  }
-
-  /**
-   * Creates a subtask under the current task.
-   */
-  task(options: SubtaskOptions): Task {
-    const subtask = new Task({
-      prefix: this.prefix,
-      padding: this.padding,
-      ...options,
-      parent: this,
-    });
-    return subtask;
   }
 
   [Symbol.dispose]() {
@@ -268,9 +222,9 @@ export class Logger {
    */
   async print(message: string): Promise<void> {
     if (this.disabled) return;
-    await Task.mutex.acquire();
+    await mutex.acquire();
     process.stdout.write(message);
-    Task.mutex.release();
+    mutex.release();
   }
 
   /**
