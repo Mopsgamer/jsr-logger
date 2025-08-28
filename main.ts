@@ -135,6 +135,11 @@ export type TaskOptions = LoggerOptions & {
    * @default "idle"
    */
   state?: TaskState;
+  /**
+   * Final task state when using task as disposable.
+   * @default "completed"
+   */
+  disposeState?: TaskStateEnd;
 };
 
 type SetOptional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
@@ -166,16 +171,16 @@ export class Task implements Disposable {
   /**
    * Whether the task is disabled.
    */
-  disabled: boolean = false;
+  disabled: boolean;
 
   /**
    * The current state of the task.
    */
-  state: TaskState = "idle";
+  state: TaskState;
   /**
    * The state to set when the task is disposed.
    */
-  disposeState: TaskState = "completed";
+  disposeState: TaskState;
 
   /**
    * The prefix for the task.
@@ -191,6 +196,7 @@ export class Task implements Disposable {
     this.prefix = options.prefix;
     this.text = options.text;
     this.disabled = options.disabled ?? false;
+    this.disposeState = options.disposeState ?? "completed";
     list.push(this);
     renderer();
   }
