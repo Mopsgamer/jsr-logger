@@ -140,6 +140,12 @@ export type TaskOptions = LoggerOptions & {
    * @default "completed"
    */
   disposeState?: TaskStateEnd;
+
+  /**
+   * Indentation level.
+   * @defult 0
+   */
+  indent?: number;
 };
 
 type SetOptional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
@@ -167,6 +173,15 @@ export class Task implements Disposable {
     }
     return result;
   }
+
+  static indent = function (task: Task): string {
+    return "  | ".repeat(task.indent);
+  };
+
+  /**
+   * Indentation level.
+   */
+  indent: number;
 
   /**
    * Whether the task is disabled.
@@ -197,6 +212,7 @@ export class Task implements Disposable {
     this.text = options.text;
     this.disabled = options.disabled ?? false;
     this.disposeState = options.disposeState ?? "completed";
+    this.indent = Math.max(options.indent ?? 0);
     list.push(this);
     renderer();
   }
@@ -207,7 +223,7 @@ export class Task implements Disposable {
    */
   sprint(): string {
     if (this.disabled) return "";
-    return sprintTask(this.prefix, this.text)[this.state];
+    return Task.indent(this) + sprintTask(this.prefix, this.text)[this.state];
   }
 
   /**
