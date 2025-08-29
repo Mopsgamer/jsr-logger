@@ -235,12 +235,49 @@ Deno.test("task.startRunner", async () => {
   assertEquals(task.state, "aborted");
 
   task = logger.task({ text: "catch error" }).startRunner(() => {
-    throw new Error();
+    throw new Error("aborted");
   });
   assertEquals(task.state, "failed");
 
   asyncTask = logger.task({ text: "catch error" }).startRunner(async () => {
     throw new Error("aborted");
+  });
+  assertEquals((await asyncTask).state, "failed");
+});
+Deno.test("task.startRunner return/throw undefined", async () => {
+  const logger = new Logger({ prefix: "TestApp" });
+  let asyncTask = logger.task({
+    text: "catch undefined",
+    disposeState: "aborted",
+  })
+    .startRunner(Promise.resolve(undefined));
+  assertEquals((await asyncTask).state, "aborted");
+
+  let task = logger.task({ text: "catch undefined", disposeState: "skipped" })
+    .startRunner(() => {
+      return;
+    });
+  assertEquals(task.state, "skipped");
+
+  task = logger.task({ text: "catch undefined", disposeState: "skipped" })
+    .startRunner(() => {
+      throw undefined;
+    });
+  assertEquals(task.state, "skipped");
+
+  asyncTask = logger.task({
+    text: "catch undefined",
+    disposeState: "skipped",
+  }).startRunner(async () => {
+    throw undefined;
+  });
+  assertEquals((await asyncTask).state, "skipped");
+
+  asyncTask = logger.task({
+    text: "catch undefined",
+    disposeState: "skipped",
+  }).startRunner(async (): Promise<TaskStateEnd> => {
+    return "failed";
   });
   assertEquals((await asyncTask).state, "failed");
 });

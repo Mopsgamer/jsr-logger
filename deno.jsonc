@@ -7,16 +7,7 @@
       "command": "deno publish",
       "dependencies": ["prepare"]
     },
-    "prepare": {
-      "command": "deno fmt ./assets/",
-      "dependencies": ["lint", "format", "test"]
-    },
-    "lint": "deno lint",
-    "test": "deno test --coverage",
-    "format": {
-      "command": "deno fmt",
-      "dependencies": ["badge:tests"]
-    },
+    "prepare": "deno check && deno test --coverage && deno lint && deno task badge:tests && deno fmt",
     "badge:tests": "deno run -A scripts/badge-tests.ts"
   },
   "lint": {

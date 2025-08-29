@@ -202,7 +202,7 @@ export class Task implements Disposable {
   /**
    * The state to set when the task is disposed.
    */
-  disposeState: TaskState;
+  disposeState: TaskStateEnd;
 
   /**
    * The prefix for the task.
@@ -259,22 +259,26 @@ export class Task implements Disposable {
    * @param runner - A function that returns an end state.
    * @returns The task instance for chaining.
    */
-  startRunner(runner: TaskRunner<TaskStateEnd>): Task;
-  startRunner(runner: TaskRunner<Promise<TaskStateEnd>>): Promise<Task>;
-  startRunner(runner: Promise<TaskStateEnd>): Promise<Task>;
+  startRunner(runner: TaskRunner<TaskStateEnd | void | never>): Task;
+  startRunner(runner: Promise<TaskStateEnd | void | never>): Promise<Task>;
+  startRunner(
+    runner: TaskRunner<Promise<TaskStateEnd | void | never>>,
+  ): Promise<Task>;
   startRunner(
     runner:
-      | Promise<TaskStateEnd>
-      | TaskRunner<TaskStateEnd>
-      | TaskRunner<Promise<TaskStateEnd>>,
+      | Promise<TaskStateEnd | void>
+      | TaskRunner<TaskStateEnd | void>
+      | TaskRunner<Promise<TaskStateEnd | void>>,
   ): Promise<Task> | Task {
     this.state = "started";
-    function catchState(e: unknown): TaskStateEnd {
+    function catchState(e: unknown, disposeState: TaskStateEnd): TaskStateEnd {
+      if (e === undefined) {
+        return disposeState;
+      }
       if (taskStateEnd.includes(e as TaskStateEnd)) {
         return e as TaskStateEnd;
-      } else {
-        return "failed";
       }
+      return "failed";
     }
     try {
       const state = runner instanceof Promise
@@ -283,18 +287,18 @@ export class Task implements Disposable {
       if (state instanceof Promise) {
         return new Promise<Task>((resolve, reject) => {
           Promise.resolve(state).then((state) => {
-            this.state = state;
+            this.state = state ?? this.disposeState;
             resolve(this);
           }).catch((e) => {
-            this.state = catchState(e);
+            this.state = catchState(e, this.disposeState);
             resolve(this);
           });
         });
       } else {
-        this.state = state;
+        this.state = state ?? this.disposeState;
       }
     } catch (e) {
-      this.state = catchState(e);
+      this.state = catchState(e, this.disposeState);
     }
     return this;
   }
