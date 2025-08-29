@@ -3,10 +3,11 @@ import { Task } from "./main.ts";
 import { delay } from "@std/async/delay";
 import { createMutex, type Mutex } from "@117/mutex";
 import process from "node:process";
+import { stripVTControlCharacters } from "node:util";
 
 export const list: Task[] = [];
 export const mutex: Mutex = createMutex();
-let prevLog: string = "";
+let prevLst: string = "";
 let loggedTasksStarted = new Set<Task>();
 let loggedTasks = new Set<Task>();
 /**
@@ -17,14 +18,14 @@ export async function render(): Promise<boolean> {
   const isLogIncomplete = runningTasks.length > 0;
 
   const lst = Task.sprintList();
-  const changed = prevLog !== lst;
-  const newLines = newLineCount(prevLog, process.stdout.columns);
-  if (changed) process.stdout.write("\x1B[1A\x1B[2K".repeat(newLines));
-
+  const stripLst = stripVTControlCharacters(lst);
+  const changed = stripLst !== prevLst;
+  const newLines = newLineCount(prevLst, process.stdout.columns);
   if (changed) {
+    process.stdout.write("\x1B[1A\x1B[2K".repeat(newLines));
     process.stdout.write(lst);
+    prevLst = stripLst;
   }
-  prevLog = lst;
   return isLogIncomplete;
 }
 /**
@@ -58,17 +59,24 @@ export async function renderer(force = false) {
   await mutex.acquire();
   process.stdout.write("\x1B[?25l");
   for (;;) {
-    await delay(0);
+    await delay(1000 / 60);
     if (!await draw()) break;
   }
   await draw();
   process.stdout.write("\x1B[?25h");
-  list;
+  list.length = 0;
+  prevLst = "";
+  loggedTasks.clear();
+  loggedTasksStarted.clear();
   mutex.release();
 }
 
 export function newLineCount(text: string, width: number): number {
-  return (text.match(
-    new RegExp(`\\n|.{,${width}}`, "g"),
-  ) ?? []).length;
+  const lines = text.split("\n");
+  let result = -1;
+  for (const line of lines) {
+    result += Math.ceil(line.length / width) || 1;
+  }
+  result = Math.max(0, result);
+  return result;
 }
