@@ -210,34 +210,39 @@ Deno.test("Task.sprintList empty", () => {
 Deno.test("task.startRunner", async () => {
   const logger = new Logger({ prefix: "TestApp" });
 
-  let task = await logger.task({ text: "0" }).startRunner(({ task }) => {
+  let task: Task = logger.task({ text: "0" }).startRunner(({ task }) => {
     assertEquals(task.state, "started");
     return "completed";
   });
   assertEquals(task.state, "completed");
 
-  task = await logger.task({ text: "1" }).startRunner(
+  let asyncTask: Promise<Task> = logger.task({ text: "1" }).startRunner(
     async ({ task }): Promise<TaskStateEnd> => {
       assertEquals(task.state, "started");
       return "aborted";
     },
   );
-  assertEquals(task.state, "aborted");
+  assertEquals((await asyncTask).state, "aborted");
 
-  task = await logger.task({ text: "1" }).startRunner(
-    Promise.resolve("failed"),
+  asyncTask = logger.task({ text: "1" }).startRunner(
+    Promise.resolve<TaskStateEnd>("failed"),
   );
-  assertEquals(task.state, "failed");
+  assertEquals((await asyncTask).state, "failed");
 
-  task = await logger.task({ text: "state from throw" }).startRunner(() => {
+  task = logger.task({ text: "state from throw" }).startRunner(() => {
     throw "aborted";
   });
   assertEquals(task.state, "aborted");
 
-  task = await logger.task({ text: "catch error" }).startRunner(() => {
+  task = logger.task({ text: "catch error" }).startRunner(() => {
     throw new Error();
   });
   assertEquals(task.state, "failed");
+
+  asyncTask = logger.task({ text: "catch error" }).startRunner(async () => {
+    throw new Error("aborted");
+  });
+  assertEquals((await asyncTask).state, "failed");
 });
 
 Deno.test("task[Symbol.dispose]", () => {
