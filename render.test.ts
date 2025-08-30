@@ -31,6 +31,7 @@ Deno.test("render", async () => {
 });
 
 Deno.test("renderCI", async () => {
+  const { output, outputUnpatch } = patchOutput();
   list.length = 0;
   assertEquals(await renderCI(), true);
   const task = new Task({ prefix: "TestApp", text: "Operating" });
@@ -39,14 +40,15 @@ Deno.test("renderCI", async () => {
   assertEquals(await renderCI(), false);
   task.end("completed");
   assertEquals(await renderCI(), true);
+  outputUnpatch();
 });
 
 Deno.test("renderer", async () => {
+  const { output, outputUnpatch } = patchOutput();
   renderer(true);
   new Task({ prefix: "TestApp", text: "Operating" });
   new Task({ prefix: "TestApp", text: "Operating" }).start();
   new Task({ prefix: "TestApp", text: "Operating" }).start().end("failed");
-  const { output, outputUnpatch } = patchOutput();
   await mutex.acquire();
   assertEquals(output, [
     "\x1b[?25l",
@@ -54,8 +56,8 @@ Deno.test("renderer", async () => {
     red("✗ TestApp") + " Operating ... " + bold(red("failed")) + "\n",
     "\x1b[?25h",
   ]);
-  outputUnpatch();
   mutex.release();
+  outputUnpatch();
 });
 
 Deno.test("newLineCount", () => {
