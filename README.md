@@ -73,3 +73,18 @@ logger.task({
   return "completed";
 });
 ```
+
+### More examples
+
+- [scripts/example-ora.ts](https://github.com/Mopsgamer/jsr-logger/blob/main/scripts/example-ora.ts):
+  Demonstrates integrating the logger with the `ora` spinner for animated task
+  progress, updating the spinner frame in real time and marking the task as
+  completed after a delay.
+- [scripts/example-ora-suffix.ts](https://github.com/Mopsgamer/jsr-logger/blob/main/scripts/example-ora-suffix.ts):
+  Shows a custom `Task` class that appends an `ora` spinner animation as a
+  suffix to the task text, including multiple tasks and subtasks with different
+  completion states.
+- [scripts/example-stress.ts](https://github.com/Mopsgamer/jsr-logger/blob/main/scripts/example-stress.ts):
+  Runs a stress test by creating and updating the state of 20 tasks in rapid
+  succession, randomly changing their states to simulate heavy usage and
+  concurrent task updates.
