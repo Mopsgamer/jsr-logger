@@ -22,7 +22,7 @@ export async function render(): Promise<boolean> {
   const changed = stripLst !== prevLst;
   const newLines = newLineCount(prevLst, process.stdout.columns);
   if (changed) {
-    process.stdout.write("\x1B[1A\x1B[2K".repeat(newLines));
+    if (newLines > 0) process.stdout.write("\x1B[" + newLines + "F\x1B[J");
     process.stdout.write(lst);
     prevLst = stripLst;
   }

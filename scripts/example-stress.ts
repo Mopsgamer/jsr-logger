@@ -1,4 +1,9 @@
 import { Logger, type Task } from "../main.ts";
+import process from "node:process";
+
+const interval = Number(process.argv.findLast((a) => Number(a))) || 1000 / 30;
+
+console.log("update interval: %f ms", interval.toFixed(2));
 
 const logger = new Logger({ prefix: "@m234/logger" });
 const list: Task[] = [];
@@ -21,4 +26,4 @@ setInterval(() => {
   if (list.every((task) => task.state !== "started")) {
     randomTask.state = "started";
   }
-}, 1);
+}, interval);

@@ -23,7 +23,6 @@ Deno.test("render", async () => {
   new Task({ prefix: "TestApp", text: "Operating" }).start().end("failed");
   render();
   assertEquals(output, [
-    "",
     magenta("- TestApp") + " Operating ...\n" +
     red("✗ TestApp") + " Operating ... " + bold(red("failed")) + "\n",
   ]);
