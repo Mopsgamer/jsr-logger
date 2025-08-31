@@ -1,54 +1,40 @@
 import { assertEquals } from "@std/assert/equals";
-import {
-  countNewLines,
-  optimizedUpdate,
-  splitNewLines,
-  type StreamSize,
-} from "./render.ts";
+import { optimizedUpdate, splitNewLines, streamSize } from "./render.ts";
 
-const sizeNormal: StreamSize = { columns: 200, rows: 200 };
-const sizeSmallWidth: StreamSize = { ...sizeNormal, columns: 2 };
-const sizeSmallHeight: StreamSize = { ...sizeNormal, rows: 2 };
-const sizeSmall: StreamSize = { ...sizeNormal, columns: 2, rows: 2 };
+const sizeNormal = streamSize(200, 200);
+const sizeSmallWidth = streamSize(2, 200);
+const sizeSmallHeight = streamSize(200, 2);
+const sizeSmall = streamSize(2, 2);
 
-const textLong = `✓ @m234/logger Processing 1/3 ... done
+Deno.test("splitNewLines", () => {
+  assertEquals(
+    splitNewLines("", streamSize(120, 200)).length - 1,
+    0,
+  );
+  assertEquals(
+    splitNewLines("\n", streamSize(120, 200)).length - 1,
+    1,
+  );
+  const textLong = `✓ @m234/logger Processing 1/3 ... done
 ⚠ @m234/logger Processing 2/3 ... aborted
 ✗ @m234/logger Processing 3/3 ... failed
 | ✓ @m234/logger Sub-task ... done
 |   | ✓ @m234/logger Sub-sub-task log text aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ... done
 ✓ @m234/logger Thinking ... skipped`;
-
-Deno.test("newLineCount", () => {
-  assertEquals(countNewLines("", { columns: 120, rows: 200 }), 0);
-  assertEquals(countNewLines("\n", { columns: 120, rows: 200 }), 1);
-  assertEquals(countNewLines(textLong, { columns: 90, rows: 200 }), 6);
-  assertEquals(countNewLines(textLong, { columns: 110, rows: 200 }), 5);
-  assertEquals(countNewLines(textLong, { columns: 50, rows: 200 }), 6);
-});
-
-Deno.test("splitNewLines", () => {
   assertEquals(
-    countNewLines("", { columns: 120, rows: 200 }),
-    splitNewLines("", { columns: 120, rows: 200 }).length - 1,
+    splitNewLines(textLong, streamSize(90, 200)).length - 1,
+    6,
   );
   assertEquals(
-    countNewLines("\n", { columns: 120, rows: 200 }),
-    splitNewLines("\n", { columns: 120, rows: 200 }).length - 1,
+    splitNewLines(textLong, streamSize(110, 200)).length - 1,
+    5,
   );
   assertEquals(
-    countNewLines(textLong, { columns: 90, rows: 200 }),
-    splitNewLines(textLong, { columns: 90, rows: 200 }).length - 1,
+    splitNewLines(textLong, streamSize(50, 200)).length - 1,
+    6,
   );
   assertEquals(
-    countNewLines(textLong, { columns: 110, rows: 200 }),
-    splitNewLines(textLong, { columns: 110, rows: 200 }).length - 1,
-  );
-  assertEquals(
-    countNewLines(textLong, { columns: 50, rows: 200 }),
-    splitNewLines(textLong, { columns: 50, rows: 200 }).length - 1,
-  );
-  assertEquals(
-    splitNewLines("hello\nworld", { columns: 2, rows: 200 }),
+    splitNewLines("hello\nworld", streamSize(2, 200)),
     ["he", "ll", "o\n", "wo", "rl", "d"],
   );
 });

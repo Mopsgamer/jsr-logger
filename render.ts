@@ -67,14 +67,8 @@ export async function renderer(force = false) {
 
 export type StreamSize = { columns: number; rows: number };
 
-export function countNewLines(text: string, size: StreamSize): number {
-  const lines = text.split("\n");
-  let result = -1;
-  for (const line of lines) {
-    result += Math.ceil(line.length / size.columns) || 1;
-  }
-  result = Math.max(0, result);
-  return result;
+export function streamSize(columns: number, rows: number): StreamSize {
+  return { columns, rows };
 }
 
 function getAnsiToken(text: string, charI: number): string | undefined {
