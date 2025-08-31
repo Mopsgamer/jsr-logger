@@ -80,7 +80,6 @@ Deno.test("partial update", () => {
   assertEquals(
     optimizedUpdate("hello", "xello\nworld", sizeNormal),
     "\x1B[0Gx\x1B[4C\nworld",
-    // \x1b[0Gx\nworld
   );
 });
 Deno.test("partial update small screen", () => {

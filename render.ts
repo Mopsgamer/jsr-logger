@@ -167,15 +167,17 @@ export function optimizedUpdate(
       break;
     }
 
+    if (lineOld !== lineNew && gotop === 0) {
+      result += "\x1B[0G";
+    }
+
     let goright = 0;
-    const lineNewTrimmed = lineNew?.trimEnd();
     for (
       let colIOld = 0, colINew = 0;
       colIOld < lineOld.length;
       colIOld++, colINew++
     ) {
-      const charOld = lineOld[colIOld], charNew = lineNewTrimmed?.[colINew];
-      if (colIOld === 0 && gotop === 0) result += "\x1B[0G";
+      const charOld = lineOld[colIOld], charNew = lineNew?.[colINew];
       if (charNew === undefined) {
         result += isLastLineNewButOldIsBigger ? "\x1B[J" : "\x1B[0K";
         break;
@@ -190,7 +192,7 @@ export function optimizedUpdate(
       //   colINew--;
       //   continue;
       // }
-      // const ansiTokenNew = getAnsiToken(lineNewTrimmed, colINew);
+      // const ansiTokenNew = getAnsiToken(lineNew, colINew);
       // if (ansiTokenNew) {
       //   colINew = colINew + ansiTokenNew.length;
       //   colIOld--;
