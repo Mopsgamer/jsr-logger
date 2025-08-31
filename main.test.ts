@@ -9,7 +9,7 @@ import {
   yellow,
 } from "@std/fmt/colors";
 import { format, Logger, Task, type TaskStateEnd } from "./main.ts";
-import { assertEquals } from "jsr:@std/assert";
+import { assertEquals } from "@std/assert";
 import { stripVTControlCharacters } from "node:util";
 import { list, mutex, state } from "./render.ts";
 import { patchOutput } from "./output-patcher.test.ts";

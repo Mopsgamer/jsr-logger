@@ -33,9 +33,11 @@
   },
   "imports": {
     "@117/mutex": "jsr:@117/mutex@^1.0.8",
+    "@std/assert": "jsr:@std/assert@^1.0.14",
     "@std/async": "jsr:@std/async@^1.0.14",
     "@std/fmt": "jsr:@std/fmt@^1.0.8",
     "@types/node": "npm:@types/node@^24.1.0",
+    "ansi-regex": "npm:ansi-regex@^6.2.0",
     "is-interactive": "npm:is-interactive@^2.0.0"
   }
 }

@@ -1,9 +1,9 @@
-import { assertEquals } from "jsr:@std/assert/equals";
+import { assertEquals } from "@std/assert/equals";
 import { Task } from "./main.ts";
 import {
+  countNewLines,
   list,
   mutex,
-  newLineCount,
   render,
   renderCI,
   renderer,
@@ -57,18 +57,4 @@ Deno.test("renderer", async () => {
   ]);
   mutex.release();
   outputUnpatch();
-});
-
-Deno.test("newLineCount", () => {
-  const textLong = `✓ @m234/logger Processing 1/3 ... done
-⚠ @m234/logger Processing 2/3 ... aborted
-✗ @m234/logger Processing 3/3 ... failed
-  | ✓ @m234/logger Sub-task ... done
-  |   | ✓ @m234/logger Sub-sub-task log text aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ... done
-✓ @m234/logger Thinking ... skipped`;
-  assertEquals(newLineCount("", 120), 0);
-  assertEquals(newLineCount("\n", 120), 1);
-  assertEquals(newLineCount(textLong, 90), 6);
-  assertEquals(newLineCount(textLong, 110), 5);
-  assertEquals(newLineCount(textLong, 50), 6);
 });

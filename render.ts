@@ -3,7 +3,7 @@ import { Task } from "./main.ts";
 import { delay } from "@std/async/delay";
 import { createMutex, type Mutex } from "@117/mutex";
 import process from "node:process";
-import { stripVTControlCharacters } from "node:util";
+import ansiRegex from "ansi-regex"
 
 export const list: Task[] = [];
 export const mutex: Mutex = createMutex();
@@ -18,14 +18,8 @@ export async function render(): Promise<boolean> {
   const isLogIncomplete = runningTasks.length > 0;
 
   const lst = Task.sprintList();
-  const stripLst = stripVTControlCharacters(lst);
-  const changed = stripLst !== prevLst;
-  const newLines = newLineCount(prevLst, process.stdout.columns);
-  if (changed) {
-    if (newLines > 0) process.stdout.write("\x1B[" + newLines + "F\x1B[J");
-    process.stdout.write(lst);
-    prevLst = stripLst;
-  }
+  process.stdout.write(optimizedUpdate(prevLst, lst, process.stdout));
+  prevLst = lst;
   return isLogIncomplete;
 }
 /**
@@ -71,12 +65,126 @@ export async function renderer(force = false) {
   mutex.release();
 }
 
-export function newLineCount(text: string, width: number): number {
+export type StreamSize = { columns: number; rows: number };
+
+export function countNewLines(text: string, size: StreamSize): number {
   const lines = text.split("\n");
   let result = -1;
   for (const line of lines) {
-    result += Math.ceil(line.length / width) || 1;
+    result += Math.ceil(line.length / size.columns) || 1;
   }
   result = Math.max(0, result);
+  return result;
+}
+
+export function splitNewLines(text: string, size: StreamSize): string[] {
+  let line = "";
+  const result: string[] = [];
+  for (
+    let charI = 0, visibleCharI = 0;
+    charI < text.length;
+  ) {
+    const char = text[charI];
+
+    const regex = new RegExp("^" + ansiRegex().source);
+    const ansiToken = regex.exec(text.substring(charI))?.[0];
+    if (ansiToken) {
+      visibleCharI = charI = charI + ansiToken.length + 1;
+      line += ansiToken;
+      continue;
+    }
+    const reachedLimit = Math.floor(visibleCharI / (size.columns - 1)) >= 1;
+    if (char === "\n" || reachedLimit) {
+      line += char;
+      result.push(line);
+      line = "";
+      visibleCharI = 0;
+      charI++;
+      continue;
+    }
+    line += char;
+    charI++;
+    visibleCharI++;
+  }
+  result.push(line);
+  return result;
+}
+
+export function optimizedUpdate(
+  textOld: string,
+  textNew: string,
+  size: StreamSize,
+): string {
+  if (textNew.startsWith(textOld)) {
+    return textNew.substring(textOld.length);
+  }
+
+  let result = "";
+
+  const linesOld = splitNewLines(textOld, size),
+    linesNew = splitNewLines(textNew, size);
+
+  let gotop = 0;
+
+  for (let rowI = linesOld.length - 1; rowI >= 0; rowI--) {
+    let lineOld = linesOld[rowI], lineNew = linesNew[rowI];
+
+    if (rowI > 0) for (let nextRowI = rowI; nextRowI >= 0; nextRowI--) {
+      lineOld = linesOld[nextRowI], lineNew = linesNew?.[nextRowI];
+      // if not changed or should go up
+      if (nextRowI > 0 && lineOld === lineNew || lineNew === undefined) {
+        gotop++;
+        continue;
+      }
+      rowI = nextRowI;
+      break
+    }
+
+    if (gotop > 0) {
+      const diff = gotop;
+      result += "\x1B[" + diff + "F";
+      gotop = 0;
+    }
+
+    const isLastLineNewButOldIsBigger = linesNew.length < linesOld.length &&
+      linesOld.length - (linesOld.length - linesNew.length) - rowI - 1 <= 0;
+    if (isLastLineNewButOldIsBigger) {
+      result += "\x1B[" + lineNew.length + "C" + "\x1B[J";
+      break;
+    }
+
+    if (lineNew === undefined) {
+      result += "\x1B[J";
+      break;
+    }
+
+    let goright = 0;
+    for (let colI = 0; colI < lineOld.length; colI++) {
+      if (colI === 0 && !/\x1B\[\d+F$/.test(result)) result += "\x1B[0G";
+      const charOld = lineOld[colI], charNew = lineNew?.[colI];
+      if (charNew === undefined) {
+        result += isLastLineNewButOldIsBigger ? "\x1B[J" : "\x1B[0K";
+        break;
+      }
+      if (charOld === charNew) {
+        goright++;
+        continue;
+      }
+      if (goright > 0) {
+        result += "\x1B[" + goright + "C";
+      }
+      result += charNew;
+      goright = 0;
+    }
+
+    if (goright > 0) {
+      result += "\x1B[" + goright + "C";
+    }
+  }
+
+  if (textNew.length > textOld.length) {
+    result += textNew.substring(textOld.length);
+  }
+
   return result;
 }
