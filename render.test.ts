@@ -1,14 +1,6 @@
 import { assertEquals } from "@std/assert/equals";
 import { Task } from "./main.ts";
-import {
-  countNewLines,
-  list,
-  mutex,
-  render,
-  renderCI,
-  renderer,
-  state,
-} from "./render.ts";
+import { list, mutex, render, renderCI, renderer, state } from "./render.ts";
 import { bold, magenta, red } from "@std/fmt/colors";
 import { patchOutput } from "./output-patcher.test.ts";
 

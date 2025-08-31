@@ -3,7 +3,7 @@ import { Task } from "./main.ts";
 import { delay } from "@std/async/delay";
 import { createMutex, type Mutex } from "@117/mutex";
 import process from "node:process";
-import ansiRegex from "ansi-regex"
+import ansiRegex from "ansi-regex";
 
 export const list: Task[] = [];
 export const mutex: Mutex = createMutex();
@@ -77,19 +77,26 @@ export function countNewLines(text: string, size: StreamSize): number {
   return result;
 }
 
+function getAnsiToken(text: string, charI: number): string | undefined {
+  const ansiToken = ansiRegex().exec(text.substring(charI))?.[0];
+  if (ansiToken && text.startsWith(ansiToken)) {
+    return ansiToken;
+  }
+}
+
 export function splitNewLines(text: string, size: StreamSize): string[] {
   let line = "";
   const result: string[] = [];
   for (
     let charI = 0, visibleCharI = 0;
     charI < text.length;
+    charI++, visibleCharI++
   ) {
     const char = text[charI];
 
-    const regex = new RegExp("^" + ansiRegex().source);
-    const ansiToken = regex.exec(text.substring(charI))?.[0];
+    const ansiToken = getAnsiToken(text, charI);
     if (ansiToken) {
-      visibleCharI = charI = charI + ansiToken.length + 1;
+      visibleCharI = charI = charI + ansiToken.length;
       line += ansiToken;
       continue;
     }
@@ -98,13 +105,10 @@ export function splitNewLines(text: string, size: StreamSize): string[] {
       line += char;
       result.push(line);
       line = "";
-      visibleCharI = 0;
-      charI++;
+      visibleCharI = -1;
       continue;
     }
     line += char;
-    charI++;
-    visibleCharI++;
   }
   result.push(line);
   return result;
@@ -126,25 +130,36 @@ export function optimizedUpdate(
 
   let gotop = 0;
 
-  for (let rowI = linesOld.length - 1; rowI >= 0; rowI--) {
-    let lineOld = linesOld[rowI], lineNew = linesNew[rowI];
+  let anyDiff = false;
 
-    if (rowI > 0) for (let nextRowI = rowI; nextRowI >= 0; nextRowI--) {
-      lineOld = linesOld[nextRowI], lineNew = linesNew?.[nextRowI];
-      // if not changed or should go up
-      if (nextRowI > 0 && lineOld === lineNew || lineNew === undefined) {
-        gotop++;
-        continue;
+  for (let rowI = linesOld.length - 1; rowI >= 0; rowI--) {
+    let lineOld = linesOld[rowI], lineNew = linesNew?.[rowI];
+
+    if (rowI > 0) {
+      for (let nextRowI = rowI; nextRowI >= 0; nextRowI--) {
+        lineOld = linesOld[nextRowI], lineNew = linesNew?.[nextRowI];
+        if (
+          nextRowI > 0 && lineNew === undefined || lineOld === lineNew.trimEnd()
+        ) {
+          anyDiff = true;
+          gotop++;
+          continue;
+        }
+        rowI = nextRowI;
+        break;
       }
-      rowI = nextRowI;
-      break
     }
 
     if (gotop > 0) {
       const diff = gotop;
       result += "\x1B[" + diff + "F";
-      gotop = 0;
     }
+
+    using _gotopZero = {
+      [Symbol.dispose]() {
+        gotop = 0;
+      },
+    };
 
     const isLastLineNewButOldIsBigger = linesNew.length < linesOld.length &&
       linesOld.length - (linesOld.length - linesNew.length) - rowI - 1 <= 0;
@@ -159,13 +174,34 @@ export function optimizedUpdate(
     }
 
     let goright = 0;
-    for (let colI = 0; colI < lineOld.length; colI++) {
-      if (colI === 0 && !/\x1B\[\d+F$/.test(result)) result += "\x1B[0G";
-      const charOld = lineOld[colI], charNew = lineNew?.[colI];
+    const lineNewTrimmed = lineNew?.trimEnd();
+    for (
+      let colIOld = 0, colINew = 0;
+      colIOld < lineOld.length;
+      colIOld++, colINew++
+    ) {
+      const charOld = lineOld[colIOld], charNew = lineNewTrimmed?.[colINew];
+      if (colIOld === 0 && gotop === 0) result += "\x1B[0G";
       if (charNew === undefined) {
         result += isLastLineNewButOldIsBigger ? "\x1B[J" : "\x1B[0K";
         break;
       }
+      // TODO: handle ansi sequence replacement
+      // both ignore length
+      // old: \1xB[38;5;197m
+      // new: \1xB[5m
+      // const ansiTokenOld = getAnsiToken(lineOld, colIOld);
+      // if (ansiTokenOld) {
+      //   colIOld = colIOld + ansiTokenOld.length;
+      //   colINew--;
+      //   continue;
+      // }
+      // const ansiTokenNew = getAnsiToken(lineNewTrimmed, colINew);
+      // if (ansiTokenNew) {
+      //   colINew = colINew + ansiTokenNew.length;
+      //   colIOld--;
+      //   continue;
+      // }
       if (charOld === charNew) {
         goright++;
         continue;
@@ -177,12 +213,18 @@ export function optimizedUpdate(
       goright = 0;
     }
 
-    if (goright > 0) {
+    const gorightNotUseless = lineOld.substring(lineOld.length - goright) !==
+      lineNew.substring(lineOld.length - goright);
+    if (goright > 0 && gorightNotUseless) {
       result += "\x1B[" + goright + "C";
+      continue;
     }
   }
 
   if (textNew.length > textOld.length) {
+    if (anyDiff) {
+      result = "\x1B[s" + result + "\x1B[u";
+    }
     result += textNew.substring(textOld.length);
   }
 

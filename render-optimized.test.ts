@@ -105,6 +105,7 @@ Deno.test({
     assertEquals(
       optimizedUpdate("hello", "xello\nworld", sizeNormal),
       "\x1B[0Gx\x1B[4C\nworld",
+      // \x1b[0Gx\nworld
     );
   },
 });
@@ -113,8 +114,7 @@ Deno.test({
   fn() {
     assertEquals(
       optimizedUpdate("hello", "xello\nworld", sizeSmallWidth),
-      "\x1B[2Fx\x1B[4C\nworld",
-    //'\x1b[0G\x1b[1C\x1b[1Fx\x1b[1C\nworld'
+      "\x1B[s\x1B[2Fx\x1B[u\nworld",
     );
   },
 });
