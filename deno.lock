@@ -3,10 +3,12 @@
   "specifiers": {
     "jsr:@117/mutex@^1.0.8": "1.0.8",
     "jsr:@std/assert@*": "1.0.14",
+    "jsr:@std/assert@^1.0.14": "1.0.14",
     "jsr:@std/async@^1.0.14": "1.0.14",
     "jsr:@std/fmt@^1.0.8": "1.0.8",
     "jsr:@std/internal@^1.0.10": "1.0.10",
     "npm:@types/node@^24.1.0": "24.3.0",
+    "npm:ansi-regex@^6.2.0": "6.2.0",
     "npm:badge-maker@*": "5.0.2",
     "npm:is-interactive@2": "2.0.0",
     "npm:ora@*": "8.2.0"
@@ -172,9 +174,11 @@
   "workspace": {
     "dependencies": [
       "jsr:@117/mutex@^1.0.8",
+      "jsr:@std/assert@^1.0.14",
       "jsr:@std/async@^1.0.14",
       "jsr:@std/fmt@^1.0.8",
       "npm:@types/node@^24.1.0",
+      "npm:ansi-regex@^6.2.0",
       "npm:is-interactive@2"
     ]
   }

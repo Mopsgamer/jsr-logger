@@ -3,7 +3,7 @@ import { Task } from "./main.ts";
 import { delay } from "@std/async/delay";
 import { createMutex, type Mutex } from "@117/mutex";
 import process from "node:process";
-import { stripVTControlCharacters } from "node:util";
+import ansiRegex from "ansi-regex";
 
 export const list: Task[] = [];
 export const mutex: Mutex = createMutex();
@@ -18,14 +18,8 @@ export async function render(): Promise<boolean> {
   const isLogIncomplete = runningTasks.length > 0;
 
   const lst = Task.sprintList();
-  const stripLst = stripVTControlCharacters(lst);
-  const changed = stripLst !== prevLst;
-  const newLines = newLineCount(prevLst, process.stdout.columns);
-  if (changed) {
-    if (newLines > 0) process.stdout.write("\x1B[" + newLines + "F\x1B[J");
-    process.stdout.write(lst);
-    prevLst = stripLst;
-  }
+  process.stdout.write(optimizedUpdate(prevLst, lst, process.stdout));
+  prevLst = lst;
   return isLogIncomplete;
 }
 /**
@@ -71,12 +65,164 @@ export async function renderer(force = false) {
   mutex.release();
 }
 
-export function newLineCount(text: string, width: number): number {
-  const lines = text.split("\n");
-  let result = -1;
-  for (const line of lines) {
-    result += Math.ceil(line.length / width) || 1;
+export type StreamSize = { columns: number; rows: number };
+
+export function streamSize(columns: number, rows: number): StreamSize {
+  return { columns, rows };
+}
+
+function getAnsiToken(text: string, charI: number): string | undefined {
+  const ansiToken = ansiRegex().exec(text.substring(charI))?.[0];
+  if (ansiToken && text.startsWith(ansiToken)) {
+    return ansiToken;
   }
-  result = Math.max(0, result);
+}
+
+export function splitNewLines(text: string, size: StreamSize): string[] {
+  let line = "";
+  const result: string[] = [];
+  for (
+    let charI = 0, visibleCharI = 0;
+    charI < text.length;
+    charI++, visibleCharI++
+  ) {
+    const char = text[charI];
+
+    const ansiToken = getAnsiToken(text, charI);
+    if (ansiToken) {
+      visibleCharI = charI = charI + ansiToken.length;
+      line += ansiToken;
+      continue;
+    }
+    const reachedLimit = Math.floor(visibleCharI / (size.columns - 1)) >= 1;
+    if (char === "\n" || reachedLimit) {
+      line += char;
+      result.push(line);
+      line = "";
+      visibleCharI = -1;
+      continue;
+    }
+    line += char;
+  }
+  result.push(line);
+  return result;
+}
+
+export function optimizedUpdate(
+  textOld: string,
+  textNew: string,
+  size: StreamSize,
+): string {
+  if (textNew.startsWith(textOld)) {
+    return textNew.substring(textOld.length);
+  }
+
+  let result = "";
+
+  const linesOld = splitNewLines(textOld, size),
+    linesNew = splitNewLines(textNew, size);
+
+  let gotop = 0;
+
+  let anyDiff = false;
+
+  for (let rowI = linesOld.length - 1; rowI >= 0; rowI--) {
+    let lineOld = linesOld[rowI], lineNew = linesNew?.[rowI];
+
+    if (rowI > 0) {
+      for (let nextRowI = rowI; nextRowI >= 0; nextRowI--) {
+        lineOld = linesOld[nextRowI], lineNew = linesNew?.[nextRowI];
+        if (
+          nextRowI > 0 && lineNew === undefined || lineOld === lineNew.trimEnd()
+        ) {
+          anyDiff = true;
+          gotop++;
+          continue;
+        }
+        rowI = nextRowI;
+        break;
+      }
+    }
+
+    if (gotop > 0) {
+      const diff = gotop;
+      result += "\x1B[" + diff + "F";
+    }
+
+    using _gotopZero = {
+      [Symbol.dispose]() {
+        gotop = 0;
+      },
+    };
+
+    const isLastLineNewButOldIsBigger = linesNew.length < linesOld.length &&
+      linesOld.length - (linesOld.length - linesNew.length) - rowI - 1 <= 0;
+    if (isLastLineNewButOldIsBigger) {
+      result += "\x1B[" + lineNew.length + "C" + "\x1B[J";
+      break;
+    }
+
+    if (lineNew === undefined) {
+      result += "\x1B[J";
+      break;
+    }
+
+    if (lineOld !== lineNew && gotop === 0) {
+      result += "\x1B[0G";
+    }
+
+    let goright = 0;
+    for (
+      let colIOld = 0, colINew = 0;
+      colIOld < lineOld.length;
+      colIOld++, colINew++
+    ) {
+      const charOld = lineOld[colIOld], charNew = lineNew?.[colINew];
+      if (charNew === undefined) {
+        result += isLastLineNewButOldIsBigger ? "\x1B[J" : "\x1B[0K";
+        break;
+      }
+      // TODO: handle ansi sequence replacement
+      // both ignore length
+      // old: \1xB[38;5;197m
+      // new: \1xB[5m
+      // const ansiTokenOld = getAnsiToken(lineOld, colIOld);
+      // if (ansiTokenOld) {
+      //   colIOld = colIOld + ansiTokenOld.length;
+      //   colINew--;
+      //   continue;
+      // }
+      // const ansiTokenNew = getAnsiToken(lineNew, colINew);
+      // if (ansiTokenNew) {
+      //   colINew = colINew + ansiTokenNew.length;
+      //   colIOld--;
+      //   continue;
+      // }
+      if (charOld === charNew) {
+        goright++;
+        continue;
+      }
+      if (goright > 0) {
+        result += "\x1B[" + goright + "C";
+      }
+      result += charNew;
+      goright = 0;
+    }
+
+    const gorightNotUseless = lineOld.substring(lineOld.length - goright) !==
+      lineNew.substring(lineOld.length - goright);
+    if (goright > 0 && gorightNotUseless) {
+      result += "\x1B[" + goright + "C";
+      continue;
+    }
+  }
+
+  if (textNew.length > textOld.length) {
+    if (anyDiff) {
+      result = "\x1B[s" + result + "\x1B[u";
+    }
+    result += textNew.substring(textOld.length);
+  }
+
   return result;
 }
