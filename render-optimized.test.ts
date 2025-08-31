@@ -53,68 +53,53 @@ Deno.test("splitNewLines", () => {
   );
 });
 
-Deno.test({
-  name: "first time print",
-  fn() {
-    assertEquals(
-      optimizedUpdate("", "hello\nworld", sizeNormal),
-      "hello\nworld",
-    );
-  },
+Deno.test("no diff", () => {
+  assertEquals(
+    optimizedUpdate("hello", "hello", sizeNormal),
+    "",
+  );
 });
-Deno.test({
-  name: "add new line",
-  fn() {
-    assertEquals(
-      optimizedUpdate("hello", "hello\nworld", sizeNormal),
-      "\nworld",
-    );
-  },
+Deno.test("first time print", () => {
+  assertEquals(
+    optimizedUpdate("", "hello\nworld", sizeNormal),
+    "hello\nworld",
+  );
 });
-Deno.test({
-  name: "add new line small screen",
-  fn() {
-    assertEquals(
-      optimizedUpdate("hello", "hello\nworld", sizeSmallWidth),
-      "\nworld",
-    );
-  },
+Deno.test("add new line", () => {
+  assertEquals(
+    optimizedUpdate("hello", "hello\nworld", sizeNormal),
+    "\nworld",
+  );
+});
+Deno.test("add new line small screen", () => {
+  assertEquals(
+    optimizedUpdate("hello", "hello\nworld", sizeSmallWidth),
+    "\nworld",
+  );
 });
 
-Deno.test({
-  name: "remove rest",
-  fn() {
-    assertEquals(
-      optimizedUpdate("hello\nworld", "hello", sizeNormal),
-      "\x1B[1F\x1B[5C\x1B[J",
-    );
-  },
+Deno.test("remove rest", () => {
+  assertEquals(
+    optimizedUpdate("hello\nworld", "hello", sizeNormal),
+    "\x1B[1F\x1B[5C\x1B[J",
+  );
 });
-Deno.test({
-  name: "remove rest small screen",
-  fn() {
-    assertEquals(
-      optimizedUpdate("hello\nworld", "hello", sizeSmallWidth),
-      "\x1B[3F\x1B[1C\x1B[J",
-    );
-  },
+Deno.test("remove rest small screen", () => {
+  assertEquals(
+    optimizedUpdate("hello\nworld", "hello", sizeSmallWidth),
+    "\x1B[3F\x1B[1C\x1B[J",
+  );
 });
-Deno.test({
-  name: "partial update",
-  fn() {
-    assertEquals(
-      optimizedUpdate("hello", "xello\nworld", sizeNormal),
-      "\x1B[0Gx\x1B[4C\nworld",
-      // \x1b[0Gx\nworld
-    );
-  },
+Deno.test("partial update", () => {
+  assertEquals(
+    optimizedUpdate("hello", "xello\nworld", sizeNormal),
+    "\x1B[0Gx\x1B[4C\nworld",
+    // \x1b[0Gx\nworld
+  );
 });
-Deno.test({
-  name: "partial update small screen",
-  fn() {
-    assertEquals(
-      optimizedUpdate("hello", "xello\nworld", sizeSmallWidth),
-      "\x1B[s\x1B[2Fx\x1B[u\nworld",
-    );
-  },
+Deno.test("partial update small screen", () => {
+  assertEquals(
+    optimizedUpdate("hello", "xello\nworld", sizeSmallWidth),
+    "\x1B[s\x1B[2Fx\x1B[u\nworld",
+  );
 });
