@@ -73,8 +73,9 @@ export function streamSize(columns: number, rows: number): StreamSize {
 }
 
 function getAnsiToken(text: string, charI: number): string | undefined {
-  const ansiToken = ansiRegex().exec(text.substring(charI))?.[0];
-  if (ansiToken && text.startsWith(ansiToken)) {
+  const sub = text.substring(charI)
+  const ansiToken = ansiRegex().exec(sub)?.[0];
+  if (ansiToken?.length && sub.startsWith(ansiToken)) {
     return ansiToken;
   }
 }
@@ -109,6 +110,9 @@ export function splitNewLines(text: string, size: StreamSize): string[] {
   return result;
 }
 
+/**
+ * Redraw without terminal flickering. This algorighm does not optimizes ansi motions.
+ */
 export function optimizedUpdate(
   textOld: string,
   textNew: string,
@@ -134,7 +138,7 @@ export function optimizedUpdate(
       for (let nextRowI = rowI; nextRowI >= 0; nextRowI--) {
         lineOld = linesOld[nextRowI], lineNew = linesNew?.[nextRowI];
         if (
-          nextRowI > 0 && lineNew === undefined || lineOld === lineNew.trimEnd()
+          nextRowI > 0 && lineNew === undefined || lineOld === lineNew || (nextRowI === linesOld.length - 1 && lineNew.startsWith(lineOld))
         ) {
           anyDiff = true;
           gotop++;
@@ -168,7 +172,7 @@ export function optimizedUpdate(
       break;
     }
 
-    if (lineOld !== lineNew && gotop === 0) {
+    if (gotop === 0 && !(lineOld === lineNew || (rowI === linesOld.length - 1 && lineNew.startsWith(lineOld)))) {
       result += "\x1B[0G";
     }
 
@@ -178,27 +182,22 @@ export function optimizedUpdate(
       colIOld < lineOld.length;
       colIOld++, colINew++
     ) {
+      // const ansiTokenOld = getAnsiToken(lineOld, colIOld);
+      // if (ansiTokenOld) { // skip old string ansi
+      //   colIOld = colIOld + ansiTokenOld.length;
+      //   colINew--; // keep when continue
+      // }
+      // const ansiTokenNew = getAnsiToken(lineNew, colINew);
+      // if (ansiTokenNew) { // put new string ansi
+      //   result += ansiTokenNew
+      //   colINew = colINew + ansiTokenNew.length;
+      //   colIOld--; // keep when continue
+      // }
       const charOld = lineOld[colIOld], charNew = lineNew?.[colINew];
       if (charNew === undefined) {
         result += isLastLineNewButOldIsBigger ? "\x1B[J" : "\x1B[0K";
         break;
       }
-      // TODO: handle ansi sequence replacement
-      // both ignore length
-      // old: \1xB[38;5;197m
-      // new: \1xB[5m
-      // const ansiTokenOld = getAnsiToken(lineOld, colIOld);
-      // if (ansiTokenOld) {
-      //   colIOld = colIOld + ansiTokenOld.length;
-      //   colINew--;
-      //   continue;
-      // }
-      // const ansiTokenNew = getAnsiToken(lineNew, colINew);
-      // if (ansiTokenNew) {
-      //   colINew = colINew + ansiTokenNew.length;
-      //   colIOld--;
-      //   continue;
-      // }
       if (charOld === charNew) {
         goright++;
         continue;
