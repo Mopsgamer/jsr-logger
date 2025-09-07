@@ -18,7 +18,8 @@ export async function render(): Promise<boolean> {
   const isLogIncomplete = runningTasks.length > 0;
 
   const lst = Task.sprintList();
-  process.stdout.write(optimizedUpdate(prevLst, lst, process.stdout));
+  const updaterString = optimizedUpdate(prevLst, lst, process.stdout);
+  process.stdout.write(updaterString);
   prevLst = lst;
   return isLogIncomplete;
 }
