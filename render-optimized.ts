@@ -26,7 +26,7 @@ export function splitNewLines(text: string, size: StreamSize): string[] {
 
     const ansiToken = getAnsiToken(text, charI);
     if (ansiToken) {
-      visibleCharI = charI = charI + ansiToken.length - 1;
+      charI = charI + ansiToken.length - 1;
       line += ansiToken;
       continue;
     }
@@ -40,7 +40,9 @@ export function splitNewLines(text: string, size: StreamSize): string[] {
     }
     line += char;
   }
-  result.push(line);
+  if (line.length) {
+    result.push(line);
+  }
   return result;
 }
 
@@ -117,7 +119,7 @@ export function optimizedUpdate(
     }
 
     let goright = 0;
-    let colorStateOld, colorStateNew = colorStateOld = "\x1B[0m";
+    let colorStateOld, colorStateNew = colorStateOld = "\x1B[39m";
     for (
       let colIOld = 0, colINew = 0;
       colIOld < lineOld.length;

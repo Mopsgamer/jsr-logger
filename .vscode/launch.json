@@ -14,10 +14,10 @@
       "runtimeExecutable": "deno",
       "runtimeArgs": [
         "run",
-        "--unstable",
-        "--inspect-wait",
-        "--allow-all"
+        "-A",
+        "--inspect-wait"
       ],
+      "console": "integratedTerminal",
       "attachSimplePort": 9229
     }
   ]

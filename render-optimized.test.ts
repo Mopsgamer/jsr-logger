@@ -4,6 +4,7 @@ import {
   splitNewLines,
   streamSize,
 } from "./render-optimized.ts";
+import { green, yellow } from "@std/fmt/colors";
 
 const sizeNormal = streamSize(200, 200);
 const sizeSmallWidth = streamSize(2, 200);
@@ -12,31 +13,41 @@ const sizeSmall = streamSize(2, 2);
 
 Deno.test("splitNewLines", () => {
   assertEquals(
-    splitNewLines("", streamSize(120, 200)).length - 1,
+    splitNewLines("", streamSize(120, 200)).length,
     0,
   );
   assertEquals(
-    splitNewLines("\n", streamSize(120, 200)).length - 1,
+    splitNewLines("\n", streamSize(120, 200)).length,
     1,
   );
-  const textLong = `✓ @m234/logger Processing 1/3 ... done
+  const textList = [
+    `✓ @m234/logger Processing 1/3 ... done
 ⚠ @m234/logger Processing 2/3 ... aborted
 ✗ @m234/logger Processing 3/3 ... failed
 | ✓ @m234/logger Sub-task ... done
 |   | ✓ @m234/logger Sub-sub-task log text aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ... done
-✓ @m234/logger Thinking ... skipped`;
-  assertEquals(
-    splitNewLines(textLong, streamSize(90, 200)).length - 1,
-    6,
-  );
-  assertEquals(
-    splitNewLines(textLong, streamSize(110, 200)).length - 1,
-    5,
-  );
-  assertEquals(
-    splitNewLines(textLong, streamSize(50, 200)).length - 1,
-    6,
-  );
+✓ @m234/logger Thinking ... skipped`,
+    `✓ @m234/logger Processing 1/3 ... ${green("done")}
+${yellow("⚠ @m234/logger")} Processing 2/3 ... ${yellow("aborted")}
+✗ @m234/logger Processing 3/3 ... failed
+| ✓ @m234/logger Sub-task ... ${green("done")}
+|   | ✓ @m234/logger Sub-sub-task log text aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ... ${green("done")}
+✓ @m234/logger Thinking ... skipped`,
+  ];
+  for (const text of textList) {
+    assertEquals(
+      splitNewLines(text, streamSize(90, 200)).length - 1,
+      6,
+    );
+    assertEquals(
+      splitNewLines(text, streamSize(110, 200)).length - 1,
+      5,
+    );
+    assertEquals(
+      splitNewLines(text, streamSize(50, 200)).length - 1,
+      6,
+    );
+  }
   assertEquals(
     splitNewLines("hello\nworld", streamSize(2, 200)),
     ["he", "ll", "o\n", "wo", "rl", "d"],
