@@ -73,7 +73,7 @@ export function streamSize(columns: number, rows: number): StreamSize {
 }
 
 function getAnsiToken(text: string, charI: number): string | undefined {
-  const sub = text.substring(charI)
+  const sub = text.substring(charI);
   const ansiToken = ansiRegex().exec(sub)?.[0];
   if (ansiToken?.length && sub.startsWith(ansiToken)) {
     return ansiToken;
@@ -92,7 +92,7 @@ export function splitNewLines(text: string, size: StreamSize): string[] {
 
     const ansiToken = getAnsiToken(text, charI);
     if (ansiToken) {
-      visibleCharI = charI = charI + ansiToken.length;
+      visibleCharI = charI = charI + ansiToken.length - 1;
       line += ansiToken;
       continue;
     }
@@ -138,7 +138,8 @@ export function optimizedUpdate(
       for (let nextRowI = rowI; nextRowI >= 0; nextRowI--) {
         lineOld = linesOld[nextRowI], lineNew = linesNew?.[nextRowI];
         if (
-          nextRowI > 0 && lineNew === undefined || lineOld === lineNew || (nextRowI === linesOld.length - 1 && lineNew.startsWith(lineOld))
+          nextRowI > 0 && lineNew === undefined || lineOld === lineNew ||
+          (nextRowI === linesOld.length - 1 && lineNew.startsWith(lineOld))
         ) {
           anyDiff = true;
           gotop++;
@@ -147,11 +148,10 @@ export function optimizedUpdate(
         rowI = nextRowI;
         break;
       }
-    }
-
-    if (gotop > 0) {
-      const diff = gotop;
-      result += "\x1B[" + diff + "F";
+      if (gotop > 0) {
+        const diff = gotop;
+        result += "\x1B[" + diff + "F";
+      }
     }
 
     using _gotopZero = {
@@ -172,33 +172,42 @@ export function optimizedUpdate(
       break;
     }
 
-    if (gotop === 0 && !(lineOld === lineNew || (rowI === linesOld.length - 1 && lineNew.startsWith(lineOld)))) {
+    if (
+      gotop === 0 &&
+      !(lineOld === lineNew ||
+        (rowI === linesOld.length - 1 && lineNew.startsWith(lineOld)))
+    ) {
       result += "\x1B[0G";
     }
 
     let goright = 0;
+    let colorStateOld, colorStateNew = colorStateOld = "\x1B[0m";
     for (
       let colIOld = 0, colINew = 0;
       colIOld < lineOld.length;
       colIOld++, colINew++
     ) {
-      // const ansiTokenOld = getAnsiToken(lineOld, colIOld);
-      // if (ansiTokenOld) { // skip old string ansi
-      //   colIOld = colIOld + ansiTokenOld.length;
-      //   colINew--; // keep when continue
-      // }
-      // const ansiTokenNew = getAnsiToken(lineNew, colINew);
-      // if (ansiTokenNew) { // put new string ansi
-      //   result += ansiTokenNew
-      //   colINew = colINew + ansiTokenNew.length;
-      //   colIOld--; // keep when continue
-      // }
+      const ansiTokenNew = getAnsiToken(lineNew, colINew);
+      if (ansiTokenNew) { // put new string ansi
+        result += ansiTokenNew;
+        colINew = colINew + ansiTokenNew.length - 1;
+        colIOld--; // keep when continue
+        colorStateNew = ansiTokenNew;
+        continue;
+      }
+      const ansiTokenOld = getAnsiToken(lineOld, colIOld);
+      if (ansiTokenOld) { // skip old string ansi
+        colIOld = colIOld + ansiTokenOld.length - 1;
+        colINew--; // keep when continue
+        colorStateOld = ansiTokenOld;
+        continue;
+      }
       const charOld = lineOld[colIOld], charNew = lineNew?.[colINew];
       if (charNew === undefined) {
         result += isLastLineNewButOldIsBigger ? "\x1B[J" : "\x1B[0K";
         break;
       }
-      if (charOld === charNew) {
+      if (charOld === charNew && colorStateOld === colorStateNew) {
         goright++;
         continue;
       }

@@ -37,6 +37,10 @@ Deno.test("splitNewLines", () => {
     splitNewLines("hello\nworld", streamSize(2, 200)),
     ["he", "ll", "o\n", "wo", "rl", "d"],
   );
+  assertEquals(
+    splitNewLines("\x1B[0Ghello", sizeNormal),
+    ["\x1B[0Ghello"],
+  );
 });
 
 Deno.test("no diff", () => {
@@ -84,8 +88,12 @@ Deno.test("partial update current line", () => {
 });
 Deno.test("partial update color", () => {
   assertEquals(
-    optimizedUpdate("\x1B[0;93mhello\x1B[0m", "\x1B[0;92mxello\x1B[0m", sizeNormal),
-    "\x1B[0G\x1B[0;93mxello\x1B[0m",
+    optimizedUpdate(
+      "\x1B[0;93mhello\x1B[0m",
+      "\x1B[0;92mxello\x1B[0m",
+      sizeNormal,
+    ),
+    "\x1B[0G\x1B[0;92mxello\x1B[0m",
   );
 });
 Deno.test("partial update current line small screen", () => {

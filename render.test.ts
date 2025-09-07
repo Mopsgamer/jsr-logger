@@ -10,7 +10,7 @@ Deno.test("render", async () => {
   const { output, outputUnpatch } = patchOutput();
   render();
   assertEquals(output, [""]);
-  output.length = 0
+  output.length = 0;
   new Task({ prefix: "TestApp", text: "Operating" });
   new Task({ prefix: "TestApp", text: "Operating" }).start();
   new Task({ prefix: "TestApp", text: "Operating" }).start().end("failed");
