@@ -114,7 +114,7 @@ Deno.test("update previous line", () => {
 Deno.test("append previous line only", () => {
   assertEquals(
     optimizedUpdate("hello\nworld\n!", "hello\nworld x\n!", sizeNormal),
-    "\x1B[s\x1B[1Fx\x1B[u",
+    "\x1B[s\x1B[1F\x1B[5C x\n\x1B[u!",
   );
 });
 Deno.test("update current line small screen", () => {
