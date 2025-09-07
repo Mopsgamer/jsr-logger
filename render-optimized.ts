@@ -64,44 +64,36 @@ export function optimizedUpdate(
     linesNew = splitNewLines(textNew, size);
 
   let gotop = 0;
-  let shouldSaveCursor = false;
+  let isCursorSaved = false;
 
   const linesOldLastI = linesOld.length - 1;
+  let rowI = linesOldLastI;
+  if (linesNew[linesNew.length - 1]?.startsWith(linesOld[linesOldLastI])) {
+    gotop++;
+    rowI--;
+  }
 
-  for (let rowI = linesOldLastI; rowI >= 0; rowI--) {
+  for (; rowI >= 0; rowI--) {
     let lineOld = linesOld[rowI], lineNew = linesNew?.[rowI];
 
-    if (rowI > 0) {
-      for (let nextRowI = rowI; nextRowI >= 0; nextRowI--) {
-        lineOld = linesOld[nextRowI], lineNew = linesNew?.[nextRowI];
-        if (
-          nextRowI > 0 && lineNew === undefined ||
-          (nextRowI === linesOldLastI && lineNew.startsWith(lineOld)) ||
-          lineOld === lineNew
-        ) {
-          gotop++;
-          continue;
-        }
-        rowI = nextRowI;
-        break;
-      }
-      if (gotop > 0) {
-        shouldSaveCursor = true;
-        result += "\x1B[" + gotop + "F";
-      }
+    if (rowI > 0 && lineNew === undefined || lineNew.startsWith(lineOld)) {
+      gotop++;
+      continue;
     }
 
-    using _gotopZero = {
-      [Symbol.dispose]() {
-        gotop = 0;
-      },
-    };
+    let didGotop = false;
+    if (gotop > 0) {
+      isCursorSaved = true;
+      result += "\x1B[" + gotop + "F";
+      didGotop = true;
+      gotop = 0;
+    }
 
     const isLastLineNewButOldIsBigger = linesNew.length < linesOld.length &&
       linesOld.length - (linesOld.length - linesNew.length) - rowI - 1 <= 0;
     if (isLastLineNewButOldIsBigger) {
       result += "\x1B[" + lineNew.length + "C" + "\x1B[J";
-      shouldSaveCursor = false;
+      isCursorSaved = false;
       break;
     }
 
@@ -110,11 +102,7 @@ export function optimizedUpdate(
       break;
     }
 
-    if (
-      gotop === 0 &&
-      !(lineOld === lineNew ||
-        (rowI === linesOldLastI && lineNew.startsWith(lineOld)))
-    ) {
+    if (!didGotop) {
       result += "\x1B[0G";
     }
 
@@ -165,7 +153,7 @@ export function optimizedUpdate(
     }
   }
 
-  if (shouldSaveCursor) {
+  if (isCursorSaved) {
     result = "\x1B[s" + result + "\x1B[u";
   }
   if (textNew.length > textOld.length) {

@@ -4,7 +4,7 @@ import {
   splitNewLines,
   streamSize,
 } from "./render-optimized.ts";
-import { green, yellow } from "@std/fmt/colors";
+import { gray, green, red, yellow } from "@std/fmt/colors";
 
 const sizeNormal = streamSize(200, 200);
 const sizeSmallWidth = streamSize(2, 200);
@@ -27,12 +27,16 @@ Deno.test("splitNewLines", () => {
 | ✓ @m234/logger Sub-task ... done
 |   | ✓ @m234/logger Sub-sub-task log text aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ... done
 ✓ @m234/logger Thinking ... skipped`,
-    `✓ @m234/logger Processing 1/3 ... ${green("done")}
+    `${green("✓ @m234/logger")} Processing 1/3 ... ${green("done")}
 ${yellow("⚠ @m234/logger")} Processing 2/3 ... ${yellow("aborted")}
-✗ @m234/logger Processing 3/3 ... failed
-| ✓ @m234/logger Sub-task ... ${green("done")}
-|   | ✓ @m234/logger Sub-sub-task log text aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ... ${green("done")}
-✓ @m234/logger Thinking ... skipped`,
+${red("✗ @m234/logger")} Processing 3/3 ... ${red("failed")}
+${green("✓ @m234/logger")} Sub-task ... ${green("done")}
+|   ${
+      green("✓ @m234/logger")
+    } Sub-sub-task log text aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ... ${
+      green("done")
+    }
+${gray("✓ @m234/logger")} Thinking ... ${gray("skipped")}`,
   ];
   for (const text of textList) {
     assertEquals(
