@@ -99,25 +99,31 @@ Deno.test("remove rest small screen", () => {
     "\x1B[3F\x1B[1C\x1B[J",
   );
 });
-Deno.test("partial update current line", () => {
+Deno.test("update current line", () => {
   assertEquals(
     optimizedUpdate("hello", "xello\nworld", sizeNormal),
     "\x1B[0Gx\x1B[4C\nworld",
   );
 });
-Deno.test("partial update previous line", () => {
+Deno.test("update previous line", () => {
   assertEquals(
     optimizedUpdate("hello\nworld", "xello\nworld", sizeNormal),
     "\x1B[s\x1B[1Fx\x1B[u",
   );
 });
-Deno.test("partial update current line small screen", () => {
+Deno.test("append previous line only", () => {
+  assertEquals(
+    optimizedUpdate("hello\nworld\n!", "hello\nworld x\n!", sizeNormal),
+    "\x1B[s\x1B[1Fx\x1B[u",
+  );
+});
+Deno.test("update current line small screen", () => {
   assertEquals(
     optimizedUpdate("hello", "xello\nworld", sizeSmallWidth),
     "\x1B[s\x1B[2Fx\x1B[u\nworld",
   );
 });
-Deno.test("partial update color", () => {
+Deno.test("update color", () => {
   assertEquals(
     optimizedUpdate(
       "\x1B[0;93mhello\x1B[0m",
