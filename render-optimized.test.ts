@@ -1,5 +1,9 @@
 import { assertEquals } from "@std/assert/equals";
-import { optimizedUpdate, splitNewLines, streamSize } from "./render.ts";
+import {
+  optimizedUpdate,
+  splitNewLines,
+  streamSize,
+} from "./render-optimized.ts";
 
 const sizeNormal = streamSize(200, 200);
 const sizeSmallWidth = streamSize(2, 200);
@@ -86,6 +90,18 @@ Deno.test("partial update current line", () => {
     "\x1B[0Gx\x1B[4C\nworld",
   );
 });
+Deno.test("partial update previous line", () => {
+  assertEquals(
+    optimizedUpdate("hello\nworld", "xello\nworld", sizeNormal),
+    "\x1B[s\x1B[1Fx\x1B[u",
+  );
+});
+Deno.test("partial update current line small screen", () => {
+  assertEquals(
+    optimizedUpdate("hello", "xello\nworld", sizeSmallWidth),
+    "\x1B[s\x1B[2Fx\x1B[u\nworld",
+  );
+});
 Deno.test("partial update color", () => {
   assertEquals(
     optimizedUpdate(
@@ -94,11 +110,5 @@ Deno.test("partial update color", () => {
       sizeNormal,
     ),
     "\x1B[0G\x1B[0;92mxello\x1B[0m",
-  );
-});
-Deno.test("partial update current line small screen", () => {
-  assertEquals(
-    optimizedUpdate("hello", "xello\nworld", sizeSmallWidth),
-    "\x1B[s\x1B[2Fx\x1B[u\nworld",
   );
 });

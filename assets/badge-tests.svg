@@ -1,11 +1,11 @@
 <svg
   xmlns="http://www.w3.org/2000/svg"
-  width="202"
+  width="160"
   height="20"
   role="img"
-  aria-label="tests: 93.5% - 29 passed, 2 failed"
+  aria-label="tests: 100.0% - 33 passed"
 >
-  <title>tests: 93.5% - 29 passed, 2 failed</title><linearGradient
+  <title>tests: 100.0% - 33 passed</title><linearGradient
     id="s"
     x2="0"
     y2="100%"
@@ -13,7 +13,7 @@
       offset="1"
       stop-opacity=".1"
     /></linearGradient><clipPath id="r"><rect
-      width="202"
+      width="160"
       height="20"
       rx="3"
       fill="#fff"
@@ -21,8 +21,8 @@
       width="37"
       height="20"
       fill="#555"
-    /><rect x="37" width="165" height="20" fill="rgb(28,220,0)" /><rect
-      width="202"
+    /><rect x="37" width="123" height="20" fill="rgb(0,220,0)" /><rect
+      width="160"
       height="20"
       fill="url(#s)"
     /></g><g
@@ -47,17 +47,17 @@
       textLength="270"
     >tests</text><text
       aria-hidden="true"
-      x="1185"
+      x="975"
       y="150"
       fill="#010101"
       fill-opacity=".3"
       transform="scale(.1)"
-      textLength="1550"
-    >93.5% - 29 passed, 2 failed</text><text
-      x="1185"
+      textLength="1130"
+    >100.0% - 33 passed</text><text
+      x="975"
       y="140"
       transform="scale(.1)"
       fill="#fff"
-      textLength="1550"
-    >93.5% - 29 passed, 2 failed</text></g>
+      textLength="1130"
+    >100.0% - 33 passed</text></g>
 </svg>
