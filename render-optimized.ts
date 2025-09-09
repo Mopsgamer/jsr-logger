@@ -6,12 +6,124 @@ export function streamSize(columns: number, rows: number): StreamSize {
   return { columns, rows };
 }
 
+type AnsiState = {
+  bold: boolean;
+  italic: boolean;
+  underline: boolean;
+  blink: boolean;
+  inverse: boolean;
+  strikethrough: boolean;
+  color: string;
+  background: string;
+};
+
+const defstate: AnsiState = {
+  bold: false,
+  italic: false,
+  underline: false,
+  blink: false,
+  inverse: false,
+  strikethrough: false,
+  color: "",
+  background: "",
+};
+
+function ansiStateCompare(a: AnsiState, b: AnsiState): boolean {
+  return a.bold === b.bold &&
+    a.italic === b.italic &&
+    a.underline === b.underline &&
+    a.blink === b.blink &&
+    a.inverse === b.inverse &&
+    a.strikethrough === b.strikethrough &&
+    a.color === b.color &&
+    a.background === b.background;
+}
+
 function getAnsiToken(text: string, charI: number): string | undefined {
   const sub = text.substring(charI);
-  const ansiToken = ansiRegex().exec(sub)?.[0];
-  if (ansiToken?.length && sub.startsWith(ansiToken)) {
-    return ansiToken;
+  const ansiToken = ansiRegex().exec(sub);
+  const token = ansiToken?.[0];
+  if (token?.length && sub.startsWith(token)) {
+    return token;
   }
+}
+
+function getAnsiState(state: AnsiState, token: string): void {
+  const sgrMatch = /\x1b\[([0-9;]*)m/i.exec(token);
+  if (!sgrMatch) return;
+
+  const codes = sgrMatch[1] ? sgrMatch[1].split(';').map(Number) : [0];
+
+  for (const code of codes) {
+    switch (code) {
+      case 0: // reset
+        Object.assign(state, defstate);
+        break;
+      case 1:
+        state.bold = true;
+        break;
+      case 3:
+        state.italic = true;
+        break;
+      case 4:
+        state.underline = true;
+        break;
+      case 5:
+        state.blink = true;
+        break;
+      case 7:
+        state.inverse = true;
+        break;
+      case 9:
+        state.strikethrough = true;
+        break;
+      case 22:
+        state.bold = false;
+        break;
+      case 23:
+        state.italic = false;
+        break;
+      case 24:
+        state.underline = false;
+        break;
+      case 25:
+        state.blink = false;
+        break;
+      case 27:
+        state.inverse = false;
+        break;
+      case 29:
+        state.strikethrough = false;
+        break;
+      default:
+        if (30 <= code && code <= 37) {
+          state.color = `color${code}`;
+        } else if (90 <= code && code <= 97) {
+          state.color = `brightColor${code}`;
+        } else if (40 <= code && code <= 47) {
+          state.background = `bgColor${code}`;
+        } else if (100 <= code && code <= 107) {
+          state.background = `brightBgColor${code}`;
+        }
+        break;
+    }
+  }
+}
+
+function getFinalAnsiState(text: string): AnsiState {
+  const state: AnsiState = { ...defstate };
+  for (
+    let charI = 0;
+    charI < text.length;
+    charI++
+  ) {
+    const ansiToken = getAnsiToken(text, charI);
+    if (ansiToken) {
+      charI = charI + ansiToken.length - 1;
+      getAnsiState(state, ansiToken);
+    }
+  }
+  return state;
 }
 
 export function splitNewLines(text: string, size: StreamSize): string[] {
@@ -67,9 +179,14 @@ export function optimizedUpdate(
   let isCursorSaved = false;
 
   const linesOldLastI = linesOld.length - 1;
-  const linesNewLastI = linesNew.length - 1;
   let rowI = linesOldLastI;
-  const isLastLineStartsSame = linesNew[linesOldLastI]?.startsWith(linesOld[linesOldLastI])
+  const isLastLineStartsSame = linesNew[linesOldLastI]?.startsWith(
+    linesOld[linesOldLastI],
+  );
+
+  let ansiStateNew: AnsiState = getFinalAnsiState(textOld);
+  let ansiStateOld: AnsiState = { ...ansiStateNew };
+
   if (isLastLineStartsSame) {
     gotop++;
     rowI--;
@@ -109,7 +226,6 @@ export function optimizedUpdate(
     }
 
     let goright = 0;
-    let colorStateOld, colorStateNew = colorStateOld = "\x1B[39m";
     const colLimit = Math.max(lineOld.length, lineNew.length);
     for (
       let colIOld = 0, colINew = 0;
@@ -130,14 +246,14 @@ export function optimizedUpdate(
         result += ansiTokenNew;
         colINew = colINew + ansiTokenNew.length - 1;
         colIOld--; // keep when continue
-        colorStateNew = ansiTokenNew;
+        getAnsiState(ansiStateNew, ansiTokenNew);
         continue;
       }
       const ansiTokenOld = getAnsiToken(lineOld, colIOld);
       if (ansiTokenOld) { // skip old string ansi
         colIOld = colIOld + ansiTokenOld.length - 1;
         colINew--; // keep when continue
-        colorStateOld = ansiTokenOld;
+        getAnsiState(ansiStateOld, ansiTokenOld);
         continue;
       }
       const charNew = lineNew?.[colINew];
@@ -145,7 +261,7 @@ export function optimizedUpdate(
         result += isLastLineNewButOldIsBigger ? "\x1B[J" : "\x1B[0K";
         break;
       }
-      if (charOld === charNew && colorStateOld === colorStateNew) {
+      if (charOld === charNew && ansiStateNew && ansiStateCompare(ansiStateOld, ansiStateNew)) {
         goright++;
         continue;
       }
@@ -161,7 +277,7 @@ export function optimizedUpdate(
     result = "\x1B[s" + result + "\x1B[u";
   }
   if (isLastLineStartsSame) {
-    result += linesNew[linesOldLastI].slice(linesOld[linesOldLastI].length)
+    result += linesNew[linesOldLastI].slice(linesOld[linesOldLastI].length);
   }
   result += linesNew.slice(linesOld.length).join("");
 
