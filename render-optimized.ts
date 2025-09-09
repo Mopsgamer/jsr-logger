@@ -67,8 +67,10 @@ export function optimizedUpdate(
   let isCursorSaved = false;
 
   const linesOldLastI = linesOld.length - 1;
+  const linesNewLastI = linesNew.length - 1;
   let rowI = linesOldLastI;
-  if (linesNew[linesNew.length - 1]?.startsWith(linesOld[linesOldLastI])) {
+  const isLastLineStartsSame = linesNew[linesOldLastI]?.startsWith(linesOld[linesOldLastI])
+  if (isLastLineStartsSame) {
     gotop++;
     rowI--;
   }
@@ -76,7 +78,7 @@ export function optimizedUpdate(
   for (; rowI >= 0; rowI--) {
     let lineOld = linesOld[rowI], lineNew = linesNew?.[rowI];
 
-    if (rowI > 0 && lineNew === undefined || lineNew.startsWith(lineOld)) {
+    if (rowI > 0 && (lineNew === undefined || lineNew.startsWith(lineOld))) {
       gotop++;
       continue;
     }
@@ -102,17 +104,27 @@ export function optimizedUpdate(
       break;
     }
 
-    if (!didGotop) {
+    if (!didGotop && !isLastLineStartsSame) {
       result += "\x1B[0G";
     }
 
     let goright = 0;
     let colorStateOld, colorStateNew = colorStateOld = "\x1B[39m";
+    const colLimit = Math.max(lineOld.length, lineNew.length);
     for (
       let colIOld = 0, colINew = 0;
-      colIOld < lineOld.length;
+      colIOld < colLimit;
       colIOld++, colINew++
     ) {
+      const charOld = lineOld[colIOld];
+      if (charOld === undefined) {
+        if (goright > 0) {
+          result += "\x1B[" + goright + "C";
+        }
+        goright = 0;
+        result += lineNew.slice(colINew);
+        break;
+      }
       const ansiTokenNew = getAnsiToken(lineNew, colINew);
       if (ansiTokenNew) { // put new string ansi
         result += ansiTokenNew;
@@ -128,10 +140,9 @@ export function optimizedUpdate(
         colorStateOld = ansiTokenOld;
         continue;
       }
-      const charOld = lineOld[colIOld], charNew = lineNew?.[colINew];
+      const charNew = lineNew?.[colINew];
       if (charNew === undefined) {
         result += isLastLineNewButOldIsBigger ? "\x1B[J" : "\x1B[0K";
-
         break;
       }
       if (charOld === charNew && colorStateOld === colorStateNew) {
@@ -144,21 +155,15 @@ export function optimizedUpdate(
       result += charNew;
       goright = 0;
     }
-
-    const gorightNotUseless = lineOld.substring(lineOld.length - goright) !==
-      lineNew.substring(lineOld.length - goright);
-    if (goright > 0 && gorightNotUseless) {
-      result += "\x1B[" + goright + "C";
-      continue;
-    }
   }
 
   if (isCursorSaved) {
     result = "\x1B[s" + result + "\x1B[u";
   }
-  if (textNew.length > textOld.length) {
-    result += textNew.substring(textOld.length);
+  if (isLastLineStartsSame) {
+    result += linesNew[linesOldLastI].slice(linesOld[linesOldLastI].length)
   }
+  result += linesNew.slice(linesOld.length).join("");
 
   return result;
 }

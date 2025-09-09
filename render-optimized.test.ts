@@ -99,7 +99,7 @@ Deno.test("remove rest small screen", () => {
     "\x1B[3F\x1B[1C\x1B[J",
   );
 });
-Deno.test("update current line", () => {
+Deno.test("update current line and append", () => {
   assertEquals(
     optimizedUpdate("hello", "xello\nworld", sizeNormal),
     "\x1B[0Gx\x1B[4C\nworld",
