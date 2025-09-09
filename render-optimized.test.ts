@@ -87,6 +87,12 @@ Deno.test("add new line small screen", () => {
   );
 });
 
+Deno.test("remove rest line", () => {
+  assertEquals(
+    optimizedUpdate("hello world", "hello", sizeNormal),
+    "\x1B[0G\x1B[5C\x1B[0K",
+  );
+});
 Deno.test("remove rest", () => {
   assertEquals(
     optimizedUpdate("hello\nworld", "hello", sizeNormal),
