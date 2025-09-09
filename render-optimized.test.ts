@@ -119,7 +119,11 @@ Deno.test("append previous line only", () => {
 });
 Deno.test("update previous colored line", () => {
   assertEquals(
-    optimizedUpdate("hello\n\x1B[0;93m\x1B[0;93mworld\x1B[0m\n!", "hello\n\x1B[0;92mworld\x1B[0m\n!", sizeNormal),
+    optimizedUpdate(
+      "hello\n\x1B[0;93m\x1B[0;93mworld\x1B[0m\n!",
+      "hello\n\x1B[0;92mworld\x1B[0m\n!",
+      sizeNormal,
+    ),
     "\x1B[s\x1B[1F\x1B[0;92mworld\x1B[0m\x1B[u",
   );
 });

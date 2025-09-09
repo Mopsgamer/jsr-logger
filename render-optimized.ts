@@ -52,7 +52,7 @@ function getAnsiState(state: AnsiState, token: string): void {
   const sgrMatch = /\x1b\[([0-9;]*)m/i.exec(token);
   if (!sgrMatch) return;
 
-  const codes = sgrMatch[1] ? sgrMatch[1].split(';').map(Number) : [0];
+  const codes = sgrMatch[1] ? sgrMatch[1].split(";").map(Number) : [0];
 
   for (const code of codes) {
     switch (code) {
@@ -258,10 +258,13 @@ export function optimizedUpdate(
       }
       const charNew = lineNew?.[colINew];
       if (charNew === undefined) {
-        result += isLastLineNewButOldIsBigger ? "\x1B[J" : "\x1B[0K";
+        result += rowI === linesOldLastI ? "\x1B[J" : "\x1B[0K";
         break;
       }
-      if (charOld === charNew && ansiStateNew && ansiStateCompare(ansiStateOld, ansiStateNew)) {
+      if (
+        charOld === charNew && ansiStateNew &&
+        ansiStateCompare(ansiStateOld, ansiStateNew)
+      ) {
         goright++;
         continue;
       }
