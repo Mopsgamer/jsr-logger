@@ -8,6 +8,7 @@ import { optimizedUpdate } from "./render-optimized.ts";
 export const list: Task[] = [];
 export const mutex: Mutex = createMutex();
 let prevLst: string = "";
+let prevUpdater: string = "";
 let loggedTasksStarted = new Set<Task>();
 let loggedTasks = new Set<Task>();
 /**
@@ -20,7 +21,11 @@ export async function render(): Promise<boolean> {
   const lst = Task.sprintList();
   const { rows, columns } = process.stdout;
   const updaterString = optimizedUpdate(prevLst, lst, { rows, columns });
-  process.stdout.write(updaterString);
+  if (updaterString.length && prevUpdater !== updaterString) {
+    process.stdout.write(updaterString);
+    // process.stdout.write(Deno.inspect({ prevLst, lst, updaterString }) + "\n\n");
+    prevUpdater = updaterString;
+  }
   prevLst = lst;
   return isLogIncomplete;
 }

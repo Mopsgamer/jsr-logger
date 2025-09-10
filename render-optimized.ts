@@ -178,10 +178,10 @@ export function optimizedUpdate(
   let gotop = 0;
   let isCursorSaved = false;
 
-  const linesOldLastI = linesOld.length - 1;
-  let rowI = linesOldLastI;
-  const isLastLineStartsSame = linesNew[linesOldLastI]?.startsWith(
-    linesOld[linesOldLastI],
+  const firstRowI = linesOld.length - 1;
+  let rowI = firstRowI;
+  const isLastLineStartsSame = linesNew[firstRowI]?.startsWith(
+    linesOld[firstRowI],
   );
 
   let ansiStateNew: AnsiState = getFinalAnsiState(textOld);
@@ -258,7 +258,12 @@ export function optimizedUpdate(
       }
       const charNew = lineNew?.[colINew];
       if (charNew === undefined) {
-        result += rowI === linesOldLastI ? "\x1B[J" : "\x1B[0K";
+        if (goright > 0) {
+          result += "\x1B[" + goright + "C";
+        }
+        result += linesNew.length < linesOld.length && rowI === firstRowI
+          ? "\x1B[J"
+          : "\x1B[0K";
         break;
       }
       if (
@@ -280,7 +285,7 @@ export function optimizedUpdate(
     result = "\x1B[s" + result + "\x1B[u";
   }
   if (isLastLineStartsSame) {
-    result += linesNew[linesOldLastI].slice(linesOld[linesOldLastI].length);
+    result += linesNew[firstRowI].slice(linesOld[firstRowI].length);
   }
   result += linesNew.slice(linesOld.length).join("");
 
