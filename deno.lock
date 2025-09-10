@@ -5,8 +5,10 @@
     "jsr:@std/assert@*": "1.0.14",
     "jsr:@std/assert@^1.0.14": "1.0.14",
     "jsr:@std/async@^1.0.14": "1.0.14",
+    "jsr:@std/cli@*": "1.0.22",
     "jsr:@std/fmt@^1.0.8": "1.0.8",
     "jsr:@std/internal@^1.0.10": "1.0.10",
+    "npm:@types/node@*": "24.2.0",
     "npm:@types/node@^24.1.0": "24.3.0",
     "npm:ansi-regex@^6.2.0": "6.2.0",
     "npm:badge-maker@*": "5.0.2",
@@ -26,6 +28,9 @@
     "@std/async@1.0.14": {
       "integrity": "62e954a418652c704d37563a3e54a37d4cf0268a9dcaeac1660cc652880b5326"
     },
+    "@std/cli@1.0.22": {
+      "integrity": "50d1e4f87887cb8a8afa29b88505ab5081188f5cad3985460c3b471fa49ff21a"
+    },
     "@std/fmt@1.0.8": {
       "integrity": "71e1fc498787e4434d213647a6e43e794af4fd393ef8f52062246e06f7e372b7"
     },
@@ -34,6 +39,12 @@
     }
   },
   "npm": {
+    "@types/node@24.2.0": {
+      "integrity": "sha512-3xyG3pMCq3oYCNg7/ZP+E1ooTaGB4cG8JWRsqqOYQdbWNY4zbaV0Ennrd7stjiJEFZCaybcIgpTjJWHRfBSIDw==",
+      "dependencies": [
+        "undici-types"
+      ]
+    },
     "@types/node@24.3.0": {
       "integrity": "sha512-aPTXCrfwnDLj4VvXrm+UUCQjNEvJgNA8s5F1cvwQU+3KNltTOkBm1j30uNLyqqPNe7gE3KFzImYoZEfLhp4Yow==",
       "dependencies": [

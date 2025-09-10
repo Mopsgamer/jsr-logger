@@ -1,13 +1,17 @@
 import { Logger, type Task } from "../main.ts";
+import { parseArgs } from "jsr:@std/cli/parse-args";
 import process from "node:process";
 
-const interval = Number(process.argv.findLast((a) => Number(a))) || 1000 / 30;
+const options = parseArgs(process.argv) as {count?: number, interval?: number}
+options.count ??= 16;
+options.interval ??= 1000 / 30;
 
-console.log("update interval: %f ms", interval.toFixed(2));
+console.log("(--interval) update interval: %f ms", options.interval.toFixed(2));
+console.log("(--count) count: %d", options.count);
 
 const logger = new Logger({ prefix: "@m234/logger" });
 const list: Task[] = [];
-for (let i = 0; i < 20; i++) {
+for (let i = 0; i < options.count; i++) {
   const task = logger.task({ text: (i + 1).toString() }).start();
   list.push(task);
 }
@@ -26,4 +30,4 @@ setInterval(() => {
   if (list.every((task) => task.state !== "started")) {
     randomTask.state = "started";
   }
-}, interval);
+}, options.interval);
