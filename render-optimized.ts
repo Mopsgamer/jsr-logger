@@ -1,4 +1,5 @@
 import ansiRegex from "ansi-regex";
+import { stripVTControlCharacters } from "node:util";
 
 export type StreamSize = { columns: number; rows: number };
 
@@ -170,6 +171,14 @@ export function optimizedUpdate(
     return textNew.substring(textOld.length);
   }
 
+  if (stripVTControlCharacters(textOld).length === 0) {
+    return textNew;
+  }
+
+  if (stripVTControlCharacters(textNew).length === 0) {
+    return "";
+  }
+
   let result = "";
 
   const linesOld = splitNewLines(textOld, size),
@@ -178,24 +187,18 @@ export function optimizedUpdate(
   let gotop = 0;
   let isCursorSaved = false;
 
-  const firstRowI = linesOld.length - 1;
-  let rowI = firstRowI;
-  const isLastLineStartsSame = linesNew[firstRowI]?.startsWith(
-    linesOld[firstRowI],
+  const linesOldLast = linesOld.length - 1;
+  const isLastLineStartsSame = linesNew[linesOldLast]?.startsWith(
+    linesOld[linesOldLast],
   );
 
   let ansiStateNew: AnsiState = getFinalAnsiState(textOld);
   let ansiStateOld: AnsiState = { ...ansiStateNew };
 
-  if (isLastLineStartsSame) {
-    gotop++;
-    rowI--;
-  }
+  LinesLoop: for (let lineI = linesOldLast; lineI >= 0; lineI--) {
+    let lineOld = linesOld[lineI], lineNew = linesNew?.[lineI];
 
-  for (; rowI >= 0; rowI--) {
-    let lineOld = linesOld[rowI], lineNew = linesNew?.[rowI];
-
-    if (rowI > 0 && (lineNew === undefined || lineNew.startsWith(lineOld))) {
+    if (lineNew === undefined || lineNew.startsWith(lineOld)) {
       gotop++;
       continue;
     }
@@ -208,14 +211,6 @@ export function optimizedUpdate(
       gotop = 0;
     }
 
-    const isLastLineNewButOldIsBigger = linesNew.length < linesOld.length &&
-      linesOld.length - (linesOld.length - linesNew.length) - rowI - 1 <= 0;
-    if (isLastLineNewButOldIsBigger) {
-      result += "\x1B[" + lineNew.length + "C" + "\x1B[J";
-      isCursorSaved = false;
-      break;
-    }
-
     if (lineNew === undefined) {
       result += "\x1B[J";
       break;
@@ -226,52 +221,55 @@ export function optimizedUpdate(
     }
 
     let goright = 0;
-    const colLimit = Math.max(lineOld.length, lineNew.length);
-    for (
-      let colIOld = 0, colINew = 0;
-      colIOld < colLimit;
-      colIOld++, colINew++
+    const charInitialI = Math.max(lineOld.length, lineNew.length);
+    CharsLoop: for (
+      let charOldI = 0, charNewI = 0;
+      charOldI < charInitialI;
+      charOldI++, charNewI++
     ) {
-      const charOld = lineOld[colIOld];
+      const charOld = lineOld[charOldI];
       if (charOld === undefined) {
         if (goright > 0) {
           result += "\x1B[" + goright + "C";
         }
         goright = 0;
-        result += lineNew.slice(colINew);
-        break;
+        result += lineNew.slice(charNewI);
+        break CharsLoop;
       }
-      const ansiTokenNew = getAnsiToken(lineNew, colINew);
+      const ansiTokenNew = getAnsiToken(lineNew, charNewI);
       if (ansiTokenNew) { // put new string ansi
         result += ansiTokenNew;
-        colINew = colINew + ansiTokenNew.length - 1;
-        colIOld--; // keep when continue
+        charNewI = charNewI + ansiTokenNew.length - 1;
+        charOldI--; // keep when continue
         getAnsiState(ansiStateNew, ansiTokenNew);
-        continue;
+        continue CharsLoop;
       }
-      const ansiTokenOld = getAnsiToken(lineOld, colIOld);
+      const ansiTokenOld = getAnsiToken(lineOld, charOldI);
       if (ansiTokenOld) { // skip old string ansi
-        colIOld = colIOld + ansiTokenOld.length - 1;
-        colINew--; // keep when continue
+        charOldI = charOldI + ansiTokenOld.length - 1;
+        charNewI--; // keep when continue
         getAnsiState(ansiStateOld, ansiTokenOld);
-        continue;
+        continue CharsLoop;
       }
-      const charNew = lineNew?.[colINew];
+      const charNew = lineNew?.[charNewI];
       if (charNew === undefined) {
         if (goright > 0) {
           result += "\x1B[" + goright + "C";
         }
-        result += linesNew.length < linesOld.length && rowI === firstRowI
-          ? "\x1B[J"
-          : "\x1B[0K";
-        break;
+        if (linesNew.length < linesOld.length && lineI >= linesNew.length - 1) {
+          result += "\x1B[J";
+          isCursorSaved = false;
+          break LinesLoop;
+        }
+        result += "\x1B[0K";
+        break CharsLoop;
       }
       if (
         charOld === charNew && ansiStateNew &&
         ansiStateCompare(ansiStateOld, ansiStateNew)
       ) {
         goright++;
-        continue;
+        continue CharsLoop;
       }
       if (goright > 0) {
         result += "\x1B[" + goright + "C";
@@ -285,7 +283,7 @@ export function optimizedUpdate(
     result = "\x1B[s" + result + "\x1B[u";
   }
   if (isLastLineStartsSame) {
-    result += linesNew[firstRowI].slice(linesOld[firstRowI].length);
+    result += linesNew[linesOldLast].slice(linesOld[linesOldLast].length);
   }
   result += linesNew.slice(linesOld.length).join("");
 
