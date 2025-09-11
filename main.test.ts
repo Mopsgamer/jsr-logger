@@ -127,6 +127,20 @@ Deno.test("Logger.start is completed", async () => {
   mutex.release();
 });
 
+Deno.test("Task.disabled disables task logging", async () => {
+  const { output, outputUnpatch } = patchOutput();
+  const logger = new Logger({ prefix: "TestApp" });
+  const task = logger.task({ text: "Operating", disabled: true }).start();
+  await mutex.acquire();
+  assertEquals(task.state, "started");
+  assertEquals(output.length, 0);
+  task.end("completed");
+  assertEquals(task.state, "completed");
+  assertEquals(output.length, 0);
+  mutex.release();
+  outputUnpatch();
+});
+
 Deno.test("task.sprint", () => {
   list.length = 0;
   const logger = new Logger({ prefix: "TestApp" });

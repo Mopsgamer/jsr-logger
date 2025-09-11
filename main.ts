@@ -11,6 +11,7 @@ import {
 import process from "node:process";
 import { formatWithOptions } from "node:util";
 import { list, mutex, renderer } from "./render.ts";
+import isInteractive from "is-interactive";
 
 /**
  * Formats the given arguments into a string.
@@ -221,7 +222,8 @@ export class Task implements Disposable {
     this.disposeState = options.disposeState ?? "completed";
     this.indent = Math.max(options.indent ?? 0);
     list.push(this);
-    renderer();
+    // deno-coverage-ignore
+    if (isInteractive()) renderer();
   }
 
   /**
@@ -239,6 +241,10 @@ export class Task implements Disposable {
    */
   start(): Task {
     this.state = "started";
+    if (this.disabled) return this;
+    if (!isInteractive()) {
+      process.stdout.write(this.sprint() + "\n");
+    }
     return this;
   }
 
@@ -250,6 +256,10 @@ export class Task implements Disposable {
    */
   end(state: TaskStateEnd): Task {
     this.state = state;
+    if (this.disabled) return this;
+    if (!isInteractive()) {
+      process.stdout.write(this.sprint() + "\n");
+    }
     return this;
   }
 
@@ -270,7 +280,7 @@ export class Task implements Disposable {
       | TaskRunner<TaskStateEnd | void>
       | TaskRunner<Promise<TaskStateEnd | void>>,
   ): Promise<Task> | Task {
-    this.state = "started";
+    this.start();
     function catchState(e: unknown, disposeState: TaskStateEnd): TaskStateEnd {
       if (e === undefined) {
         return disposeState;
@@ -287,25 +297,23 @@ export class Task implements Disposable {
       if (state instanceof Promise) {
         return new Promise<Task>((resolve, reject) => {
           Promise.resolve(state).then((state) => {
-            this.state = state ?? this.disposeState;
-            resolve(this);
+            resolve(this.end(state ?? this.disposeState));
           }).catch((e) => {
-            this.state = catchState(e, this.disposeState);
-            resolve(this);
+            resolve(this.end(catchState(e, this.disposeState)));
           });
         });
       } else {
-        this.state = state ?? this.disposeState;
+        this.end(state ?? this.disposeState);
       }
     } catch (e) {
-      this.state = catchState(e, this.disposeState);
+      this.end(catchState(e, this.disposeState));
     }
     return this;
   }
 
   [Symbol.dispose]() {
     if (this.state === "started" || this.state === "idle") {
-      this.state = this.disposeState;
+      this.end(this.disposeState);
     }
   }
 }
@@ -347,10 +355,16 @@ export class Logger {
    */
   async print(message: string): Promise<void> {
     if (this.disabled) return;
+    if (!isInteractive()) {
+      process.stdout.write(message);
+      return;
+      // deno-coverage-ignore-start
+    }
     await mutex.acquire();
     process.stdout.write(message);
     mutex.release();
   }
+  // deno-coverage-ignore-stop
 
   /**
    * Same as {@link print}, but with a new line.

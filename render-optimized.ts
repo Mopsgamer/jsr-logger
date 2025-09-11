@@ -261,7 +261,7 @@ export function optimizedUpdate(
           isCursorSaved = false;
           break LinesLoop;
         }
-        result += "\x1B[0K";
+        result += "\x1B[K";
         break CharsLoop;
       }
       if (

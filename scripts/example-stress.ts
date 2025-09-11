@@ -2,7 +2,10 @@ import { Logger, type Task } from "../main.ts";
 import { parseArgs } from "jsr:@std/cli/parse-args";
 import process from "node:process";
 
-const options = parseArgs(process.argv) as {count?: number, interval?: number}
+const options = parseArgs(process.argv) as {
+  count?: number;
+  interval?: number;
+};
 options.count ??= 16;
 options.interval ??= 1000 / 30;
 
