@@ -141,6 +141,7 @@ export function splitNewLines(text: string, size: StreamSize): string[] {
     if (ansiToken) {
       charI = charI + ansiToken.length - 1;
       line += ansiToken;
+      visibleCharI--;
       continue;
     }
     const reachedLimit = Math.floor(visibleCharI / (size.columns - 1)) >= 1;
@@ -268,6 +269,7 @@ export function optimizedUpdate(
       }
       if (charNew === "\n") {
         result += "\x1B[K\n";
+        gotop += 2;
         continue CharsLoop;
       }
       result += charNew;

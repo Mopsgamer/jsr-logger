@@ -171,6 +171,34 @@ Deno.test("update colored line (bigger, override)", () => {
   );
 });
 
+Deno.test("update colored line small screen (bigger, override)", () => {
+  assertEquals(
+    optimizedUpdate(
+      "\x1b[35m- @m234/logger\x1b[39m Task A ...\n" +
+        "\x1b[32m✓ @m234/logger\x1b[39m Task B ... \x1b[1m\x1b[32mdone\x1b[39m\x1b[22m\n",
+      "\x1b[35m- @m234/logger\x1b[39m Task A ...\n" +
+        "\x1b[90m✓ @m234/logger\x1b[39m Task B ... \x1b[90mskipped\x1b[39m\n",
+      { columns: 20, rows: 400 },
+    ),
+    "\x1b[s\x1b[1F\x1b[90m\x1b[6Cskipped\x1b[39m\x1b[K\n\x1b[2F\x1b[90m✓ @m234/logger\x1b[39m Task \x1b[u",
+  );
+});
+
+Deno.test("update small screen previous line", () => {
+  assertEquals(
+    Deno.inspect(optimizedUpdate(
+      "✗ @m234/logger 1abcdefABCDEFabcdefABCDEFabcdefABCDEF ... failed\n" +
+        "- @m234/logger 2abcdefABCDEFabcdefABCDEFabcdefABCDEF ...\n" +
+        "✓ @m234/logger 3abcdefABCDEFabcdefABCDEFabcdefABCDEF ... done\n",
+      "✓ @m234/logger 1abcdefABCDEFabcdefABCDEFabcdefABCDEF ... skipped\n" +
+        "- @m234/logger 2abcdefABCDEFabcdefABCDEFabcdefABCDEF ...\n" +
+        "✓ @m234/logger 3abcdefABCDEFabcdefABCDEFabcdefABCDEF ... done\n",
+      { columns: 60, rows: 200 },
+    )),
+    "",
+  );
+});
+
 Deno.test("update colored line (smaller, clear rest)", () => {
   assertEquals(
     optimizedUpdate(

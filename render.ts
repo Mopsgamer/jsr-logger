@@ -17,7 +17,8 @@ export async function render(): Promise<boolean> {
 
   const lst = Task.sprintList();
   const { rows, columns } = process.stdout;
-  const updaterString = optimizedUpdate(prevLst, lst, { rows, columns });
+  const size = { rows, columns };
+  const updaterString = optimizedUpdate(prevLst, lst, size);
   if (updaterString.length && prevUpdater !== updaterString) {
     process.stdout.write(updaterString);
     prevUpdater = updaterString;

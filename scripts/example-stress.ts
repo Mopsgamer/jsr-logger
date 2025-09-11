@@ -15,12 +15,13 @@ console.log("(--count) count: %d", options.count);
 const logger = new Logger({ prefix: "@m234/logger" });
 const list: Task[] = [];
 for (let i = 0; i < options.count; i++) {
-  const task = logger.task({ text: (i + 1).toString() }).start();
+  const task = logger.task({
+    text: (i + 1).toString() + "abcdefABCDEFabcdefABCDEFabcdefABCDEF",
+  }).start();
   list.push(task);
 }
 
 const states = [
-  "started",
   "aborted",
   "completed",
   "failed",
@@ -29,7 +30,7 @@ const states = [
 
 setInterval(() => {
   const randomTask = list[Math.floor(Math.random() * list.length)];
-  randomTask.state = states[Math.floor(Math.random() * states.length)];
+  randomTask.end(states[Math.floor(Math.random() * states.length)]);
   if (list.every((task) => task.state !== "started")) {
     randomTask.state = "started";
   }
