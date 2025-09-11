@@ -14,11 +14,11 @@ const sizeSmall = streamSize(2, 2);
 Deno.test("splitNewLines", () => {
   assertEquals(
     splitNewLines("", streamSize(120, 200)).length,
-    0,
+    1,
   );
   assertEquals(
     splitNewLines("\n", streamSize(120, 200)).length,
-    1,
+    2,
   );
   const textList = [
     `✓ @m234/logger Processing 1/3 ... done
@@ -111,11 +111,19 @@ Deno.test("update current line and append", () => {
     "\x1B[0Gx\x1B[4C\nworld",
   );
 });
-Deno.test("update previous line", () => {
-  assertEquals(
-    optimizedUpdate("hello\nworld", "xello\nworld", sizeNormal),
-    "\x1B[s\x1B[1Fx\x1B[u",
-  );
+Deno.test("update previous line", async (t) => {
+  await t.step("no new line ending", () => {
+    assertEquals(
+      optimizedUpdate("hello\nworld", "xello\nworld", sizeNormal),
+      "\x1B[s\x1B[1Fx\x1B[u",
+    );
+  });
+  await t.step("new line ending", () => {
+    assertEquals(
+      optimizedUpdate("hello\nworld\n", "xello\nworld\n", sizeNormal),
+      "\x1B[s\x1B[2Fx\x1B[u",
+    );
+  });
 });
 Deno.test("append previous line only", () => {
   assertEquals(
@@ -147,5 +155,18 @@ Deno.test("update color", () => {
       sizeNormal,
     ),
     "\x1B[0G\x1B[0;92mxello\x1B[0m",
+  );
+});
+
+Deno.test("update colored line with skipped", () => {
+  assertEquals(
+    optimizedUpdate(
+      "\x1b[35m- @m234/logger\x1b[39m Task A ...\n" +
+        "\x1b[32m✓ @m234/logger\x1b[39m Task B ... \x1b[1m\x1b[32mdone\x1b[39m\x1b[22m\n",
+      "\x1b[35m- @m234/logger\x1b[39m Task A ...\n" +
+        "\x1b[90m✓ @m234/logger\x1b[39m Task B ... \x1b[90mskipped\x1b[39m\n",
+      sizeNormal,
+    ),
+    "\x1b[s\x1b[1F\x1b[90m✓ @m234/logger\x1b[39m Task B ... \x1b[90mskipped\x1b[39m\n\x1b[u",
   );
 });

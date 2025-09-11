@@ -19,8 +19,10 @@ export async function render(): Promise<boolean> {
   const { rows, columns } = process.stdout;
   const updaterString = optimizedUpdate(prevLst, lst, { rows, columns });
   if (updaterString.length && prevUpdater !== updaterString) {
-    process.stdout.write(updaterString);
-    // process.stdout.write(Deno.inspect({ prevLst, lst, updaterString }) + "\n\n");
+    // process.stdout.write(updaterString);
+    process.stdout.write(
+      Deno.inspect({ prevLst, lst, updaterString }) + "\n\n",
+    );
     prevUpdater = updaterString;
   }
   prevLst = lst;

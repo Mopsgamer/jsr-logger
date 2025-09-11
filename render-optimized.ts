@@ -153,9 +153,7 @@ export function splitNewLines(text: string, size: StreamSize): string[] {
     }
     line += char;
   }
-  if (line.length) {
-    result.push(line);
-  }
+  result.push(line);
   return result;
 }
 
