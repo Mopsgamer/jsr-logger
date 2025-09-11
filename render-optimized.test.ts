@@ -108,7 +108,7 @@ Deno.test("remove rest small screen", () => {
 Deno.test("update current line and append", () => {
   assertEquals(
     optimizedUpdate("hello", "xello\nworld", sizeNormal),
-    "\x1B[0Gx\x1B[4C\nworld",
+    "\x1B[0Gx\x1B[4C\x1B[K\nworld",
   );
 });
 Deno.test("update previous line", async (t) => {
@@ -128,7 +128,7 @@ Deno.test("update previous line", async (t) => {
 Deno.test("append previous line only", () => {
   assertEquals(
     optimizedUpdate("hello\nworld\n!", "hello\nworld x\n!", sizeNormal),
-    "\x1B[s\x1B[1F\x1B[5C x\n\x1B[u",
+    "\x1B[s\x1B[1F\x1B[5C x\x1B[K\n\x1B[u",
   );
 });
 Deno.test("update previous colored line", () => {
@@ -158,7 +158,7 @@ Deno.test("update color", () => {
   );
 });
 
-Deno.test("update colored line with skipped", () => {
+Deno.test("update colored line (bigger, override)", () => {
   assertEquals(
     optimizedUpdate(
       "\x1b[35m- @m234/logger\x1b[39m Task A ...\n" +
@@ -167,6 +167,19 @@ Deno.test("update colored line with skipped", () => {
         "\x1b[90m✓ @m234/logger\x1b[39m Task B ... \x1b[90mskipped\x1b[39m\n",
       sizeNormal,
     ),
-    "\x1b[s\x1b[1F\x1b[90m✓ @m234/logger\x1b[39m Task B ... \x1b[90mskipped\x1b[39m\n\x1b[u",
+    "\x1b[s\x1b[1F\x1b[90m✓ @m234/logger\x1b[39m Task B ... \x1b[90mskipped\x1b[39m\x1b[K\n\x1b[u",
+  );
+});
+
+Deno.test("update colored line (smaller, clear rest)", () => {
+  assertEquals(
+    optimizedUpdate(
+      "\x1b[35m- @m234/logger\x1b[39m Task A ...\n" +
+        "\x1b[90m✓ @m234/logger\x1b[39m Task B ... \x1b[90mskipped\x1b[39m\n",
+      "\x1b[35m- @m234/logger\x1b[39m Task A ...\n" +
+        "\x1b[32m✓ @m234/logger\x1b[39m Task B ... \x1b[1m\x1b[32mdone\x1b[39m\x1b[22m\n",
+      sizeNormal,
+    ),
+    "\x1b[s\x1b[1F\x1b[32m✓ @m234/logger\x1b[39m Task B ... \x1b[1m\x1b[32mdone\x1b[39m\x1b[22m\x1B[K\n\x1b[u",
   );
 });

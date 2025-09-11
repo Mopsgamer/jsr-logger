@@ -3,9 +3,9 @@
   width="108"
   height="20"
   role="img"
-  aria-label="coverage: 88.1%"
+  aria-label="coverage: 89.9%"
 >
-  <title>coverage: 88.1%</title><linearGradient id="s" x2="0" y2="100%"><stop
+  <title>coverage: 89.9%</title><linearGradient id="s" x2="0" y2="100%"><stop
       offset="0"
       stop-color="#bbb"
       stop-opacity=".1"
@@ -17,7 +17,7 @@
       x="61"
       width="47"
       height="20"
-      fill="rgb(52,220,0)"
+      fill="rgb(44,220,0)"
     /><rect width="108" height="20" fill="url(#s)" /></g><g
     fill="#fff"
     text-anchor="middle"
@@ -46,11 +46,11 @@
       fill-opacity=".3"
       transform="scale(.1)"
       textLength="370"
-    >88.1%</text><text
+    >89.9%</text><text
       x="835"
       y="140"
       transform="scale(.1)"
       fill="#fff"
       textLength="370"
-    >88.1%</text></g>
+    >89.9%</text></g>
 </svg>

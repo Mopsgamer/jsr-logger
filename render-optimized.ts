@@ -219,21 +219,11 @@ export function optimizedUpdate(
     }
 
     let goright = 0;
-    const charInitialI = Math.max(lineOld.length, lineNew.length);
     CharsLoop: for (
       let charOldI = 0, charNewI = 0;
-      charOldI < charInitialI;
+      charOldI < lineOld.length || charNewI < lineNew.length;
       charOldI++, charNewI++
     ) {
-      const charOld = lineOld[charOldI];
-      if (charOld === undefined) {
-        if (goright > 0) {
-          result += "\x1B[" + goright + "C";
-        }
-        goright = 0;
-        result += lineNew.slice(charNewI);
-        break CharsLoop;
-      }
       const ansiTokenNew = getAnsiToken(lineNew, charNewI);
       if (ansiTokenNew) { // put new string ansi
         result += ansiTokenNew;
@@ -249,6 +239,7 @@ export function optimizedUpdate(
         getAnsiState(ansiStateOld, ansiTokenOld);
         continue CharsLoop;
       }
+      const charOld = lineOld[charOldI];
       const charNew = lineNew?.[charNewI];
       if (charNew === undefined) {
         if (goright > 0) {
@@ -259,7 +250,9 @@ export function optimizedUpdate(
           isCursorSaved = false;
           break LinesLoop;
         }
-        result += "\x1B[K";
+        if (!lineNew.endsWith("\n")) {
+          result += "\x1B[K";
+        }
         break CharsLoop;
       }
       if (
@@ -271,9 +264,13 @@ export function optimizedUpdate(
       }
       if (goright > 0) {
         result += "\x1B[" + goright + "C";
+        goright = 0;
+      }
+      if (charNew === "\n") {
+        result += "\x1B[K\n";
+        continue CharsLoop;
       }
       result += charNew;
-      goright = 0;
     }
   }
 
