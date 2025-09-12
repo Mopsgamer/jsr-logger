@@ -269,11 +269,12 @@ export function optimizedUpdate(
       }
       if (charNew === "\n") {
         result += "\x1B[K\n";
-        gotop += 2;
+        gotop++;
         continue CharsLoop;
       }
       result += charNew;
     }
+    gotop++;
   }
 
   if (isCursorSaved) {

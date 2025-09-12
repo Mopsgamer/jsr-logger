@@ -184,18 +184,18 @@ Deno.test("update colored line small screen (bigger, override)", () => {
   );
 });
 
-Deno.test("update small screen previous line", () => {
+Deno.test("update small screen previous lines", () => {
   assertEquals(
-    Deno.inspect(optimizedUpdate(
-      "✗ @m234/logger 1abcdefABCDEFabcdefABCDEFabcdefABCDEF ... failed\n" +
-        "- @m234/logger 2abcdefABCDEFabcdefABCDEFabcdefABCDEF ...\n" +
-        "✓ @m234/logger 3abcdefABCDEFabcdefABCDEFabcdefABCDEF ... done\n",
-      "✓ @m234/logger 1abcdefABCDEFabcdefABCDEFabcdefABCDEF ... skipped\n" +
-        "- @m234/logger 2abcdefABCDEFabcdefABCDEFabcdefABCDEF ...\n" +
-        "✓ @m234/logger 3abcdefABCDEFabcdefABCDEFabcdefABCDEF ... done\n",
+    optimizedUpdate(
+      "✗ @m234/logger 1abcdefABCDEFabcdefABCDEFabcdefABCDEF ... \n" +
+        "- @m234/logger 2abcdefABCDEFabcdefABCDEFabcdefABCDEF ... done\n" +
+        "✓ @m234/logger 3abcdefABCDEFabcdefABCDEFabcdefABCDEF ... \n",
+      "✓ @m234/logger 1abcdefABCDEFabcdefABCDEFabcdefABCDEF ... \n" +
+        "- @m234/logger 2abcdefABCDEFabcdefABCDEFabcdefABCDEF ... aborted\n" +
+        "✓ @m234/logger 3abcdefABCDEFabcdefABCDEFabcdefABCDEF ... \n",
       { columns: 60, rows: 200 },
-    )),
-    "",
+    ),
+    "\x1B[s\x1B[2Frted\x1B[K\n\x1B[2F\x1B[57Cabo\x1B[1F✓\x1B[u",
   );
 });
 
