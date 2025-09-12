@@ -4,7 +4,7 @@ import {
   splitNewLines,
   streamSize,
 } from "./render-optimized.ts";
-import { gray, green, red, yellow } from "@std/fmt/colors";
+import { gray, green, magenta, red, yellow } from "@std/fmt/colors";
 
 const sizeNormal = streamSize(200, 200);
 const sizeSmallWidth = streamSize(2, 200);
@@ -196,6 +196,21 @@ Deno.test("update small screen previous lines", () => {
       { columns: 60, rows: 200 },
     ),
     "\x1B[s\x1B[2Frted\x1B[K\n\x1B[2F\x1B[57Cabo\x1B[1F✓\x1B[u",
+  );
+});
+
+Deno.test("update small screen previous lines colored", () => {
+  assertEquals(
+    optimizedUpdate(
+      `${magenta("✗ @m234/logger")} 1abcdefABCDEFabcdefABCDEFabcdefABCDEF ... \n` +
+        `${magenta("- @m234/logger")} 2abcdefABCDEFabcdefABCDEFabcdefABCDEF ... ${green("done")}\n` +
+        `${magenta("✓ @m234/logger")} 3abcdefABCDEFabcdefABCDEFabcdefABCDEF ... \n`,
+      `${magenta("✓ @m234/logger")} 1abcdefABCDEFabcdefABCDEFabcdefABCDEF ... \n` +
+        `${magenta("- @m234/logger")} 2abcdefABCDEFabcdefABCDEFabcdefABCDEF ... ${yellow("aborted")}\n` +
+        `${magenta("✓ @m234/logger")} 3abcdefABCDEFabcdefABCDEFabcdefABCDEF ... \n`,
+      { columns: 60, rows: 200 },
+    ),
+    "\x1B[s\x1B[2F\x1B[39mrted\x1B[K\n\x1B[2F\x1B[57Cabo\x1B[1F✓\x1B[u",
   );
 });
 
