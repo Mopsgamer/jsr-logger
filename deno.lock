@@ -13,7 +13,8 @@
     "npm:ansi-regex@^6.2.0": "6.2.0",
     "npm:badge-maker@*": "5.0.2",
     "npm:is-interactive@2": "2.0.0",
-    "npm:ora@*": "8.2.0"
+    "npm:ora@*": "8.2.0",
+    "npm:restore-cursor@^5.1.0": "5.1.0"
   },
   "jsr": {
     "@117/mutex@1.0.8": {
@@ -190,7 +191,8 @@
       "jsr:@std/fmt@^1.0.8",
       "npm:@types/node@^24.1.0",
       "npm:ansi-regex@^6.2.0",
-      "npm:is-interactive@2"
+      "npm:is-interactive@2",
+      "npm:restore-cursor@^5.1.0"
     ]
   }
 }
