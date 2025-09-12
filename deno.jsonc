@@ -1,7 +1,7 @@
 {
   "name": "@m234/logger",
   "description": "A colorful logger with the ability to log \"Processing ... done\".",
-  "version": "2.0.5",
+  "version": "2.0.6",
   "tasks": {
     "publish": {
       "command": "deno publish",
@@ -36,6 +36,7 @@
     "@std/async": "jsr:@std/async@^1.0.14",
     "@std/fmt": "jsr:@std/fmt@^1.0.8",
     "@types/node": "npm:@types/node@^24.1.0",
-    "is-interactive": "npm:is-interactive@^2.0.0"
+    "is-interactive": "npm:is-interactive@^2.0.0",
+    "restore-cursor": "npm:restore-cursor@^5.1.0"
   }
 }
