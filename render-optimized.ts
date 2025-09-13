@@ -40,6 +40,35 @@ function ansiStateCompare(a: AnsiState, b: AnsiState): boolean {
     a.background === b.background;
 }
 
+function getAnsiTokenFromState(state: AnsiState): string {
+  const codes: number[] = [];
+  if (state.bold) codes.push(1);
+  if (state.italic) codes.push(3);
+  if (state.underline) codes.push(4);
+  if (state.blink) codes.push(5);
+  if (state.inverse) codes.push(7);
+  if (state.strikethrough) codes.push(9);
+
+  if (state.color.startsWith("color")) {
+    const code = Number(state.color.replace("color", ""));
+    if (!isNaN(code)) codes.push(code);
+  } else if (state.color.startsWith("brightColor")) {
+    const code = Number(state.color.replace("brightColor", ""));
+    if (!isNaN(code)) codes.push(code);
+  }
+
+  if (state.background.startsWith("bgColor")) {
+    const code = Number(state.background.replace("bgColor", ""));
+    if (!isNaN(code)) codes.push(code);
+  } else if (state.background.startsWith("brightBgColor")) {
+    const code = Number(state.background.replace("brightBgColor", ""));
+    if (!isNaN(code)) codes.push(code);
+  }
+
+  if (codes.length === 0) return "\x1b[0m";
+  return `\x1b[${codes.join(";")}m`;
+}
+
 function getAnsiToken(text: string, charI: number): string | undefined {
   const sub = text.substring(charI);
   const ansiToken = ansiRegex().exec(sub);
@@ -112,7 +141,7 @@ function getAnsiState(state: AnsiState, token: string): void {
 }
 
 function getFinalAnsiState(text: string): AnsiState {
-  const state: AnsiState = { ...defstate };
+  const state: AnsiState = structuredClone(defstate);
   for (
     let charI = 0;
     charI < text.length;
@@ -192,13 +221,12 @@ export function optimizedUpdate(
   );
 
   let ansiStateNew: AnsiState = getFinalAnsiState(textOld);
-  let ansiStateOld: AnsiState = { ...ansiStateNew };
+  let ansiStateOld: AnsiState = structuredClone(ansiStateNew);
 
-  LinesLoop: for (let lineI = linesOldLast; lineI >= 0; lineI--) {
+  LinesLoop: for (let lineI = linesOldLast; lineI >= 0; lineI--, gotop++) {
     let lineOld = linesOld[lineI], lineNew = linesNew?.[lineI];
 
     if (lineNew === undefined || lineNew.startsWith(lineOld)) {
-      gotop++;
       continue;
     }
 
@@ -274,7 +302,6 @@ export function optimizedUpdate(
       }
       result += charNew;
     }
-    gotop++;
   }
 
   if (isCursorSaved) {
