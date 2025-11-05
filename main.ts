@@ -19,7 +19,7 @@ import { delay } from "@std/async/delay";
  * @param args - The arguments to format.
  * @returns A formatted string.
  */
-function format(...args: unknown[]): string {
+export function format(...args: unknown[]): string {
   const colors = getColorEnabled();
   const [message, ...other] = args;
   if (typeof message == "string") {
@@ -34,10 +34,10 @@ function format(...args: unknown[]): string {
  * @param level - The log level: 'info', 'warn', 'error', 'success', or undefined/null for no level.
  * @param args - The message and optional arguments to log.
  */
-function sprintLevel(
+export function sprintLevel(
   prefix: string,
+  message: string,
   level?: LogLevel,
-  ...args: unknown[]
 ): string {
   switch (level) {
     case "info":
@@ -56,7 +56,26 @@ function sprintLevel(
       prefix = prefix;
       break;
   }
-  return `${prefix} ${format(...args)}`;
+  return `${prefix} ${message}`;
+}
+
+/**
+ * Returns a formatted message string for the end of a continuous log.
+ */
+export function sprintTask(prefix: string, text: string): TaskSprint {
+  const left = ` ${text} ...`;
+  const taskSprint: TaskSprint = {
+    started: magenta("- " + prefix) + left,
+    aborted: sprintLevel(prefix, text, "warn") + " ... " +
+      bold(yellow("aborted")),
+    completed: sprintLevel(prefix, text, "success") + " ... " +
+      bold(green("done")),
+    failed: sprintLevel(prefix, text, "error") + " ... " +
+      bold(red("failed")),
+    skipped: gray("✓ " + prefix) + " " + text + " ... " +
+      gray("skipped"),
+  };
+  return taskSprint;
 }
 
 /**
@@ -74,6 +93,8 @@ export type TaskStateEnd = "completed" | "aborted" | "failed" | "skipped";
  */
 export type TaskState = TaskStateStart | TaskStateEnd;
 
+type TaskRunner<R> = (options: { task: Task; list: Task[] }) => R;
+
 /**
  * Logger levels for formatted console output.
  */
@@ -88,12 +109,14 @@ export type TaskOptions = LoggerOptions & {
   text: string;
   parent?: Task;
   state?: TaskState;
-  padding?: string | TaskPadder;
+  padding?: string | TaskRunner<string>;
 };
 
 let prevLog: string = "";
 let logStack: string = "";
-let n = 0;
+let newLines = 0;
+let loggedTasksStarted = new Set<Task>();
+let loggedTasks = new Set<Task>();
 /**
  * @returns `true` if any task is running.
  */
@@ -102,11 +125,11 @@ async function render(): Promise<boolean> {
   let runningTasks = Task.list.filter((task) => task.state === "started");
   const isLogIncomplete = runningTasks.length > 0;
 
-  const list = Task.sprint();
-  const changed = prevLog !== list
-  if (changed) process.stdout.write("\x1B[1A\x1B[2K".repeat(n));
+  const list = Task.sprintList();
+  const changed = prevLog !== list;
+  if (changed) process.stdout.write("\x1B[1A\x1B[2K".repeat(newLines));
   process.stdout.write(logStack);
-  n = Math.max(
+  newLines = Math.max(
     0,
     ((logStack + list).match(
       new RegExp(`\\n|[^\\n]{${process.stdout.columns}}`, "g"),
@@ -120,8 +143,6 @@ async function render(): Promise<boolean> {
   return isLogIncomplete;
 }
 
-let loggedTasksStarted = new Set<Task>();
-let loggedTasks = new Set<Task>();
 async function renderCI(): Promise<boolean> {
   for (const task of Task.list) {
     if (task.state === "idle") continue;
@@ -135,7 +156,9 @@ async function renderCI(): Promise<boolean> {
 
     process.stdout.write(task.sprint()[task.state] + "\n");
   }
-  const isLogIncomplete = loggedTasks.size !== Task.list.length;
+  const isLogIncomplete = Task.list.every((task) =>
+    loggedTasks.has(task) && loggedTasksStarted.has(task)
+  );
   return isLogIncomplete;
 }
 
@@ -153,15 +176,13 @@ const renderer = async function () {
   rendererMutex.release();
 };
 
-type TaskPadder = (options: { task: Task; list: Task[] }) => string;
-
 /**
  * Logging interface for asynchronous procedure.
  */
 export class Task implements Disposable {
   static list: Task[] = [];
 
-  static sprint(): string {
+  static sprintList(): string {
     const visibleTasks = Task.list.filter((task) => task.state !== "idle");
     let result = "";
     if (visibleTasks.length > 0) {
@@ -186,7 +207,7 @@ export class Task implements Disposable {
   disabled: boolean;
   text: string;
   parent?: Task;
-  padding: string | TaskPadder;
+  padding: string | TaskRunner<string>;
 
   constructor(options: TaskOptions) {
     this.state = options.state ?? "idle";
@@ -217,24 +238,42 @@ export class Task implements Disposable {
    * Returns a formatted message string for the end of a continuous log.
    */
   sprint(): TaskSprint {
-    const left = ` ${this.text} ...`;
-    const taskSprint: TaskSprint = {
-      started: magenta("- " + this.prefix) + left,
-      aborted: sprintLevel(this.prefix, "warn", this.text) + " ... " +
-        bold(yellow("aborted")),
-      completed: sprintLevel(this.prefix, "success", this.text) + " ... " +
-        bold(green("done")),
-      failed: sprintLevel(this.prefix, "error", this.text) + " ... " +
-        bold(red("failed")),
-      skipped: gray("✓ " + this.prefix) + " " + this.text + " ... " +
-        gray("skipped"),
-    };
-    return taskSprint;
+    return sprintTask(this.prefix, this.text);
   }
 
-  task(...args: unknown[]): Task {
+  /**
+   * Sets the task state to "started" and begins rendering.
+   */
+  start(): Task {
+    if (this.disabled) return this;
+    this.state = "started";
+    return this;
+  }
+
+  /**
+   * Sets the task state to "completed" and ends rendering.
+   */
+  end(state: TaskStateEnd): Task {
+    if (this.disabled) return this;
+    this.state = state;
+    return this;
+  }
+
+  /**
+   * Runs the task with a given runner function.
+   */
+  startRunner(runner: TaskRunner<TaskStateEnd>): Task {
+    this.state = "started";
+    this.state = runner({ task: this, list: Task.list });
+    return this;
+  }
+
+  /**
+   * Creates a subtask under the current task.
+   */
+  task(options: Omit<TaskOptions, "prefix">): Task {
     const subtask = new Task({
-      text: format(...args),
+      ...options,
       prefix: this.prefix,
     });
     subtask.parent = this;
@@ -295,53 +334,54 @@ export class Logger {
   }
 
   /**
-   * Same as {@link print}, but formats the given arguments.
+   * Returns a formatted message string for a given level (no side effects).
+   * @param level - The log level: 'info', 'warn', 'error', 'success', or undefined/null for no level.
    * @param args - The message and optional arguments to log.
    */
-  printf(...args: unknown[]): void {
-    const message = format(...args);
-    this.print(message);
+  sprintLevel(
+    message: string,
+    level?: LogLevel,
+  ): string {
+    return sprintLevel(this.prefix, message, level);
   }
 
   /**
-   * Same as {@link printf}, but adds new line.
-   * @param args - The message and optional arguments to log.
+   * Returns a formatted message string for the end of a continuous log.
    */
-  printfln(...args: unknown[]): void {
-    const message = format(...args);
-    this.print(message + "\n");
+  sprintTask(text: string): TaskSprint {
+    return sprintTask(this.prefix, text);
   }
 
   /**
    * Logs an informational message.
    * @param args - The message and optional arguments to log.
    */
-  info(...args: unknown[]): void {
-    this.println(sprintLevel(this.prefix, "info", ...args));
+  info(message: string): void {
+    this.println(this.sprintLevel(message, "info"));
   }
 
   /**
    * Logs an error message. Ends any ongoing continuous log as a failure.
    * @param args - The message and optional arguments to log.
    */
-  error(...args: unknown[]): void {
-    this.println(sprintLevel(this.prefix, "error", ...args));
+  error(message: string): void {
+    this.println(this.sprintLevel(message, "error"));
   }
 
   /**
    * Logs a warning message.
    * @param args - The message and optional arguments to log.
    */
-  warn(...args: unknown[]): void {
-    this.println(sprintLevel(this.prefix, "warn", ...args));
+  warn(message: string): void {
+    this.println(this.sprintLevel(message, "warn"));
   }
 
   /**
    * Logs a success message.
    * @param args - The message and optional arguments to log.
    */
-  success(...args: unknown[]): void {
-    this.println(sprintLevel(this.prefix, "success", ...args));
+  success(message: string): void {
+    this.println(this.sprintLevel(message, "success"));
   }
 
   /**
@@ -349,9 +389,9 @@ export class Logger {
    * Can be ended by the `end` and other log-methods such as `info` and `error`.
    * @param args - The message and optional arguments to log.
    */
-  task(...args: unknown[]): Task {
+  task(options: Omit<TaskOptions, "prefix">): Task {
     return new Task({
-      text: format(...args),
+      ...options,
       prefix: this.prefix,
     });
   }
