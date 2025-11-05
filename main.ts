@@ -111,6 +111,19 @@ export type TaskState = TaskStateStart | TaskStateEnd;
 export type TaskRunner<R> = (options: { task: Task; list: Task[] }) => R;
 
 /**
+ * Union type representing any valid task runner.
+ */
+export type AnyRunner =
+  | Promise<TaskStateEnd | void>
+  | TaskRunner<TaskStateEnd | void>
+  | TaskRunner<Promise<TaskStateEnd | void>>;
+
+/**
+ * Return type of the task runner.
+ */
+type TaskRunnerReturn = TaskStateEnd | void | never;
+
+/**
  * Logger levels for formatted console output.
  */
 export type LogLevel = "info" | "warn" | "error" | "success";
@@ -269,17 +282,10 @@ export class Task implements Disposable {
    * @param runner - A function that returns an end state.
    * @returns The task instance for chaining.
    */
-  startRunner(runner: TaskRunner<TaskStateEnd | void | never>): Task;
-  startRunner(runner: Promise<TaskStateEnd | void | never>): Promise<Task>;
-  startRunner(
-    runner: TaskRunner<Promise<TaskStateEnd | void | never>>,
-  ): Promise<Task>;
-  startRunner(
-    runner:
-      | Promise<TaskStateEnd | void>
-      | TaskRunner<TaskStateEnd | void>
-      | TaskRunner<Promise<TaskStateEnd | void>>,
-  ): Promise<Task> | Task {
+  startRunner(runner: TaskRunner<TaskRunnerReturn>): Task;
+  startRunner(runner: Promise<TaskRunnerReturn>): Promise<Task>;
+  startRunner(runner: TaskRunner<Promise<TaskRunnerReturn>>): Promise<Task>;
+  startRunner(runner: AnyRunner): Promise<Task> | Task {
     this.start();
     function catchState(e: unknown, disposeState: TaskStateEnd): TaskStateEnd {
       if (e === undefined) {
