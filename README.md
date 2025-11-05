@@ -38,9 +38,9 @@ import { Logger } from "@m234/logger";
 
 using logger = new Logger("MyApp");
 
-logger.printf("Starting %s...", "machine");
+logger.printf("Starting %s ... ", "machine");
 logger.println("done");
-// Output: Starting machine...done
+// Output: Starting machine ... done
 ```
 
 ### Continuous Logging with `start` and `end`
@@ -53,9 +53,9 @@ import { Logger } from "@m234/logger";
 using logger = new Logger("MyApp");
 
 logger.start("Operating");
-// Output: ⓘ [MyApp] Operating...
+// Output: ⓘ [MyApp] Operating ...
 logger.end(); // Clears the line
-// Output: ✔ [MyApp] Operating...done
+// Output: ✔ [MyApp] Operating ... done
 ```
 
 The `error`, `success`, `info`, and `warn` methods can also be used to end a
@@ -67,10 +67,10 @@ import { Logger } from "@m234/logger";
 using logger = new Logger("MyApp");
 
 logger.start("Operating");
-// Output: - [MyApp] Operating...
+// Output: - [MyApp] Operating ...
 logger.error("An error occurred");
 logger.end("completed"); // Ignored
-// Output: ✖ [MyApp] Operating...failed
+// Output: ✖ [MyApp] Operating ... failed
 // Output: ✖ [MyApp] An error occurred
 ```
 

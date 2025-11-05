@@ -164,7 +164,7 @@ export class Logger {
   start(...args: unknown[]): void {
     this.startedArgs = args;
     const prefix = magenta("- " + this.prefix);
-    this.print(`${prefix} ${this.format(...args)}...`);
+    this.print(`${prefix} ${this.format(...args)} ...`);
     this.#state = "started";
   }
 
@@ -179,26 +179,30 @@ export class Logger {
     this.#state = stateEnd;
 
     let message: string;
+    let char: string;
     let color: (message: string) => string;
     switch (stateEnd) {
       case "failed":
+        char = "✖"
         message = "failed";
         color = red;
         break;
       case "aborted":
+        char = "⚠";
         message = "aborted";
         color = yellow;
         break;
       default:
+        char = "✔";
         message = "done";
         color = green;
         break;
     }
 
-    const prefix = color("- " + this.prefix);
+    const prefix = color(char + " " + this.prefix);
     const text = this.format(...this.startedArgs);
     const result = bold(color(message));
-    this.printfln(`\r${prefix} ${text}...${result}`);
+    this.printfln(`\r${prefix} ${text} ... ${result}`);
   }
 
   [Symbol.dispose]() {
