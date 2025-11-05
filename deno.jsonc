@@ -12,7 +12,7 @@
       "dependencies": ["lint", "format", "test"]
     },
     "lint": "deno lint",
-    "test": "deno test",
+    "test": "deno test --coverage",
     "format": {
       "command": "deno fmt",
       "dependencies": ["badge:tests"]

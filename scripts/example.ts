@@ -19,15 +19,15 @@ let task2 = logger.task({ text: "Processing 2/3" }).start();
 setTimeout(() => task2.end("aborted"), 7000);
 
 let task3 = logger.task({ text: "Processing 3/3" }).start();
-let task31 = task3.task({ text: "Sub-task" }).start();
-let task311 = task31.task({ text: "Sub-sub-task" }).start();
+let task31 = logger.task({ text: "Sub-task" }).start();
+let task311 = logger.task({ text: "Sub-sub-task" }).start();
 setTimeout(() => task311.end("completed"), 200);
 setTimeout(() => task31.end("completed"), 200);
 setTimeout(() => {
   task3.end("skipped");
 }, 4000);
 
-let task11 = task1.task({ text: "Thinking" }).startRunner(() => "skipped");
+let task11 = logger.task({ text: "Thinking" }).startRunner(() => "skipped");
 
 await delay(1000);
 logger.success("DOing");
