@@ -15,7 +15,12 @@ import {
   Task,
   type TaskStateEnd,
 } from "./main.ts";
-import { assert, assertEquals } from "jsr:@std/assert";
+import {
+  assert,
+  assertEquals,
+  assertLessOrEqual,
+  assertMatch,
+} from "jsr:@std/assert";
 import { stripVTControlCharacters } from "node:util";
 import { mutex, state, taskList } from "./render.ts";
 import { patchOutput } from "./output-patcher.test.ts";
@@ -131,6 +136,30 @@ Deno.test("Logger.start is completed", async () => {
   await mutex.acquire();
   assertEquals(task.state, "completed");
   mutex.release();
+});
+
+Deno.test("Task.duration exists", async () => {
+  const { output, outputUnpatch } = patchOutput();
+  const logger = new Logger({ prefix: "TestApp" });
+  const task = logger.task({ text: "Operating", suffixDuration: true });
+  assertEquals(task.duration, undefined);
+  assertEquals(Task.duration(task), "");
+  task.start();
+  assertLessOrEqual(task.duration, process.hrtime.bigint());
+  await mutex.acquire();
+  task.end("completed");
+  assertLessOrEqual(task.duration, process.hrtime.bigint());
+  assertEquals(task.state, "completed");
+  assertEquals(
+    output[0],
+    "\x1b[35m- TestApp\x1b[39m Operating ...\n",
+  );
+  assertMatch(
+    output[1],
+    /\x1b\[32m✓ TestApp\x1b\[39m Operating ... \x1b\[1m\x1b\[32mdone\x1b\[39m\x1b\[22m \w+\n/,
+  );
+  mutex.release();
+  outputUnpatch();
 });
 
 Deno.test("Task.disabled disables task logging", async () => {

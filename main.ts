@@ -12,6 +12,7 @@ import process from "node:process";
 import { formatWithOptions } from "node:util";
 import { mutex, renderer, taskList } from "./render.ts";
 import isInteractive from "is-interactive";
+import { ns } from "@m234/ns";
 
 /**
  * Formats the given arguments into a string.
@@ -305,6 +306,11 @@ export type TaskOptions = LoggerOptions & {
    * @defult 0
    */
   indent?: number;
+  /**
+   * Whether the duration of the task should be shown.
+   * @default false
+   */
+  suffixDuration?: boolean;
 };
 
 type SetOptional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
@@ -342,6 +348,13 @@ export class Task implements Disposable {
     return "  | ".repeat(task.indent);
   };
 
+  static duration = function (task: Task): string {
+    if (task.duration === undefined) {
+      return "";
+    }
+    return ns(task.duration);
+  };
+
   /**
    * Indentation level.
    */
@@ -366,6 +379,18 @@ export class Task implements Disposable {
    * Task appearance text.
    */
   text: string;
+  /**
+   * Whether the duration of the task should be shown.
+   */
+  suffixDuration: boolean;
+
+  #duration: bigint | undefined;
+  /**
+   * The time when the task was started in nanoseconds.
+   */
+  get duration(): bigint | undefined {
+    return this.#duration;
+  }
 
   constructor(options: TaskOptions) {
     this.state = options.state ?? "idle";
@@ -374,6 +399,7 @@ export class Task implements Disposable {
     this.disabled = options.disabled ?? false;
     this.disposeState = options.disposeState ?? "completed";
     this.indent = Math.max(options.indent ?? 0);
+    this.suffixDuration = options.suffixDuration ?? false;
     taskList.push(this);
     // deno-coverage-ignore
     if (isInteractive()) renderer();
@@ -385,7 +411,11 @@ export class Task implements Disposable {
    */
   sprint(): string {
     if (this.disabled) return "";
-    return Task.indent(this) + sprintTask(this.prefix, this.text)[this.state];
+    const isEnded = this.state !== "idle" && this.state !== "started";
+    let duration = this.suffixDuration && isEnded ? Task.duration(this) : "";
+    duration &&= " " + duration;
+    return Task.indent(this) + sprintTask(this.prefix, this.text)[this.state] +
+      duration;
   }
 
   /**
@@ -394,6 +424,7 @@ export class Task implements Disposable {
    */
   start(): Task {
     this.state = "started";
+    this.#duration = process.hrtime.bigint();
     if (this.disabled) return this;
     if (!isInteractive()) {
       process.stdout.write(this.sprint() + "\n");
