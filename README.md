@@ -90,9 +90,9 @@ logger.task({
   logger,
   async ({ task }) => {
     await delay(1000);
-    throw new Error("test")
+    throw new Error("test");
   },
-  "warn" // optional, defaults to "error"
+  "warn", // optional, defaults to "error"
 ));
 ```
 

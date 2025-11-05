@@ -96,12 +96,12 @@ export type TaskStateEnd = "completed" | "aborted" | "failed" | "skipped";
 /**
  * Array of valid end states for tasks.
  */
-export const taskStateEnd = [
+export const taskStateEnd: ["failed", "completed", "aborted", "skipped"] = [
   "failed",
   "completed",
   "aborted",
   "skipped",
-] as const satisfies TaskStateEnd[];
+] as const;
 
 /**
  * Enum representing the possible states of the task.
@@ -148,7 +148,10 @@ export function startRunner(
   task: Task,
   runner: TaskRunner<Promise<TaskRunnerReturn>>,
 ): Promise<Task>;
-export function startRunner(task: Task, runner: AnyRunner): Promise<Task> | Task {
+export function startRunner(
+  task: Task,
+  runner: AnyRunner,
+): Promise<Task> | Task {
   task.start();
   try {
     const state = runner instanceof Promise
@@ -192,7 +195,11 @@ export function printErrors(
   runner: TaskRunner<Promise<TaskRunnerReturn>>,
   level?: LogLevel,
 ): TaskRunner<Promise<TaskRunnerReturn>>;
-export function printErrors(logger: Logger, runner: AnyRunner, level: LogLevel = "error"): any {
+export function printErrors(
+  logger: Logger,
+  runner: AnyRunner,
+  level: LogLevel = "error",
+): any {
   return (async (options) => {
     try {
       if (runner instanceof Promise) {
