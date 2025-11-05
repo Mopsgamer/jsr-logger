@@ -7,43 +7,59 @@ import { stripVTControlCharacters } from "node:util";
 
 restoreCursor();
 
-export const list: Task[] = [];
+export const taskList: Task[] = [];
 export const mutex: Mutex = createMutex();
-let prevLst: string = "";
-/**
- * @returns `true` if any task is running.
- */
-export async function render(): Promise<boolean> {
-  let runningTasks = list.filter((task) => task.state === "started");
-  const isLogIncomplete = runningTasks.length > 0;
+let previousListString: string = "";
 
-  const lst = Task.sprintList();
-  const stripLst = stripVTControlCharacters(lst);
-  const changed = stripLst !== prevLst;
-  const newLines = newLineCount(prevLst, process.stdout.columns);
+/**
+ * Returns true if there are any tasks that are currently in the "started" state.
+ */
+export function isPending(): boolean {
+  const shouldRedraw = taskList.some(
+    (task) => task.state === "started",
+  );
+  return shouldRedraw;
+}
+
+/**
+ * Clears all non-idle tasks from the task list.
+ */
+export function clearTasksExceptIdle(): void {
+  for (let i = taskList.length - 1; i >= 0; i--) {
+    if (taskList[i].state !== "idle") {
+      taskList.splice(i, 1);
+    }
+  }
+}
+
+export function render(): void {
+  const listString = Task.sprintList();
+  const listStringNoVT = stripVTControlCharacters(listString);
+  const changed = listStringNoVT !== previousListString;
+  const newLines = newLineCount(previousListString, process.stdout.columns);
   if (changed) {
     if (newLines > 0) process.stdout.write("\x1B[" + newLines + "F\x1B[J");
-    process.stdout.write(lst);
-    prevLst = stripLst;
+    process.stdout.write(listString);
+    previousListString = listStringNoVT;
   }
-  return isLogIncomplete;
 }
 
 export let state = { noLoop: false };
 
 // deno-coverage-ignore-start
-export async function renderer(force = false) {
+export async function renderer(force = false): Promise<void> {
   if (state.noLoop && !force) return;
   await mutex.acquire();
   process.stdout.write("\x1B[?25l");
   for (; !state.noLoop;) {
     await delay(1000 / 60);
-    if (!await render()) break;
+    render();
+    if (!isPending()) break;
   }
-  await render();
+  render();
   process.stdout.write("\x1B[?25h");
-  list.length = 0;
-  prevLst = "";
+  clearTasksExceptIdle();
+  previousListString = "";
   mutex.release();
 }
 // deno-coverage-ignore-stop

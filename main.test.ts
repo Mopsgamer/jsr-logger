@@ -11,7 +11,7 @@ import {
 import { format, Logger, Task, type TaskStateEnd } from "./main.ts";
 import { assertEquals } from "jsr:@std/assert";
 import { stripVTControlCharacters } from "node:util";
-import { list, mutex, state } from "./render.ts";
+import { mutex, state, taskList } from "./render.ts";
 import { patchOutput } from "./output-patcher.test.ts";
 
 state.noLoop = true;
@@ -142,7 +142,7 @@ Deno.test("Task.disabled disables task logging", async () => {
 });
 
 Deno.test("task.sprint", () => {
-  list.length = 0;
+  taskList.length = 0;
   const logger = new Logger({ prefix: "TestApp" });
   const task = logger.task({ text: "Operating" }).start();
   assertEquals(
@@ -154,10 +154,10 @@ Deno.test("task.sprint", () => {
 });
 
 Deno.test("Task.sprintList", async () => {
-  list.length = 0;
+  taskList.length = 0;
   const logger = new Logger({ prefix: "TestApp" });
   const task0 = logger.task({ text: "0" }).start();
-  assertEquals(list[0], task0);
+  assertEquals(taskList[0], task0);
   assertEquals(
     Task.sprintList(),
     magenta("- TestApp") + " 0 ...\n",
@@ -173,7 +173,7 @@ Deno.test("Task.sprintList", async () => {
 });
 
 Deno.test("Task.sprintList empty", () => {
-  list.length = 0;
+  taskList.length = 0;
   assertEquals(Task.sprintList(), "");
 });
 

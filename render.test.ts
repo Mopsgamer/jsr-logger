@@ -1,6 +1,13 @@
-import { assertEquals } from "jsr:@std/assert/equals";
+import { assert, assertEquals, assertFalse } from "jsr:@std/assert";
 import { Task } from "./main.ts";
-import { newLineCount, render, renderer, state } from "./render.ts";
+import {
+  isPending,
+  newLineCount,
+  render,
+  renderer,
+  state,
+  taskList,
+} from "./render.ts";
 import { bold, magenta, red } from "@std/fmt/colors";
 import { patchOutput } from "./output-patcher.test.ts";
 import { assertArrayIncludes } from "jsr:@std/assert/array-includes";
@@ -59,4 +66,22 @@ Deno.test("newLineCount", () => {
   assertEquals(newLineCount(textLong, 90), 6);
   assertEquals(newLineCount(textLong, 110), 5);
   assertEquals(newLineCount(textLong, 50), 6);
+});
+
+Deno.test("isPending", () => {
+  taskList.length = 0;
+  assertFalse(isPending());
+
+  new Task({ state: "idle", text: "", prefix: "" });
+  assertFalse(isPending());
+
+  taskList.length = 0;
+  new Task({ state: "idle", text: "", prefix: "" });
+  new Task({ state: "started", text: "", prefix: "" });
+  assert(isPending());
+
+  taskList.length = 0;
+  new Task({ state: "idle", text: "", prefix: "" });
+  new Task({ state: "failed", text: "", prefix: "" });
+  assertFalse(isPending());
 });

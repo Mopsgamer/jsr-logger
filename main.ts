@@ -10,7 +10,7 @@ import {
 } from "@std/fmt/colors";
 import process from "node:process";
 import { formatWithOptions } from "node:util";
-import { list, mutex, renderer } from "./render.ts";
+import { mutex, renderer, taskList } from "./render.ts";
 import isInteractive from "is-interactive";
 
 /**
@@ -172,7 +172,7 @@ export class Task implements Disposable {
    * @returns A formatted string that ends with a new line if there are any visible tasks.
    */
   static sprintList(): string {
-    const visibleTasks = list.filter((task) => task.state !== "idle");
+    const visibleTasks = taskList.filter((task) => task.state !== "idle");
     let result = "";
     if (visibleTasks.length > 0) {
       for (const task of visibleTasks) {
@@ -221,7 +221,7 @@ export class Task implements Disposable {
     this.disabled = options.disabled ?? false;
     this.disposeState = options.disposeState ?? "completed";
     this.indent = Math.max(options.indent ?? 0);
-    list.push(this);
+    taskList.push(this);
     // deno-coverage-ignore
     if (isInteractive()) renderer();
   }
@@ -293,7 +293,7 @@ export class Task implements Disposable {
     try {
       const state = runner instanceof Promise
         ? runner
-        : runner({ task: this, list: [...list] });
+        : runner({ task: this, list: [...taskList] });
       if (state instanceof Promise) {
         return new Promise<Task>((resolve, reject) => {
           Promise.resolve(state).then((state) => {
