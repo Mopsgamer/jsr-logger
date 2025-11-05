@@ -179,6 +179,8 @@ Deno.test("task.sprint", () => {
     task.sprint(),
     magenta("- [TestApp]") + " Operating ...",
   );
+  task.disabled = true;
+  assertEquals(task.sprint(), "");
 });
 
 Deno.test("Task.sprintList", async () => {

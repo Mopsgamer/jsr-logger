@@ -55,6 +55,7 @@ export let state = { noLoop: false };
 
 export async function renderer(force = false) {
   if (state.noLoop && !force) return;
+  // deno-coverage-ignore
   const draw = () => isInteractive() ? render() : renderCI();
   await mutex.acquire();
   process.stdout.write("\x1B[?25l");
