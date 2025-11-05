@@ -1,8 +1,11 @@
 import { Task } from "./main.ts";
 import { delay } from "@std/async/delay";
 import { createMutex, type Mutex } from "@117/mutex";
+import restoreCursor from "restore-cursor";
 import process from "node:process";
 import { stripVTControlCharacters } from "node:util";
+
+restoreCursor();
 
 export const list: Task[] = [];
 export const mutex: Mutex = createMutex();
