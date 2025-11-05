@@ -29,6 +29,7 @@ You can log messages without a new line or prefix, but with formatting:
 import { Logger } from "@m234/logger";
 
 using logger = new Logger("MyApp");
+
 logger.printf("Starting %s...", "machine");
 logger.println("done");
 // Output: Starting machine...done
@@ -42,6 +43,7 @@ For more control, use the `start` and `end` methods:
 import { Logger } from "@m234/logger";
 
 using logger = new Logger("MyApp");
+
 logger.start("Operating");
 // Output: ⓘ [MyApp] Operating...
 logger.end(); // Clears the line
@@ -53,7 +55,9 @@ continuous log. All methods except `error` will mark the log as completed:
 
 ```ts
 import { Logger } from "@m234/logger";
+
 using logger = new Logger("MyApp");
+
 logger.start("Operating");
 // Output: - [MyApp] Operating...
 logger.error("An error occurred"); // Clears the line
