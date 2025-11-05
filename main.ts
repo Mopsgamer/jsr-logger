@@ -13,7 +13,12 @@ import { formatWithOptions } from "node:util";
 import { createInterface } from "node:readline/promises";
 import isInteractive from "is-interactive";
 
-const readline = createInterface(process.stdin, process.stdout, undefined, isInteractive())
+const readline = createInterface(
+  process.stdin,
+  process.stdout,
+  undefined,
+  isInteractive(),
+);
 
 /**
  * Enum representing the starting states of the logger.
@@ -35,8 +40,16 @@ export type LoggerState = LoggerStateStart | LoggerStateEnd;
  */
 export type LoggerLevel = "info" | "warn" | "error" | "success";
 
-export type Task = {
-  
+export type TaskOptions = {
+  text: string;
+  parent?: Task;
+};
+
+/**
+ * Logging interface for asynchronous procedure.
+ */
+export class Task implements Logger, Disposable {
+  contructor(options: TaskOptions) {}
 }
 
 /**
