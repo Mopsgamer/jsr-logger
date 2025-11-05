@@ -38,6 +38,12 @@ export class Logger {
    * A string to prefix all log messages. Wrapped in square brackets.
    */
   private prefix: string;
+
+  /**
+   * Whether the logger is disabled.
+   */
+  public disabled: boolean;
+
   /**
    * The current state of the continuous log.
    */
@@ -59,9 +65,11 @@ export class Logger {
   /**
    * Creates a new Logger instance.
    * @param prefix - A string to prefix all log messages.
+   * @param disabled - Whether the logger is disabled. Defaults to `false`.
    */
-  constructor(prefix: string) {
+  constructor(prefix: string, disabled = false) {
     this.prefix = `[${prefix}]`;
+    this.disabled = disabled;
   }
 
   /**
@@ -88,6 +96,10 @@ export class Logger {
       this.end("completed");
     }
 
+    if (this.disabled) {
+      return;
+    }
+
     process.stdout.write(message);
   }
 
@@ -105,7 +117,7 @@ export class Logger {
    */
   printf(...args: unknown[]): void {
     const message = this.format(...args);
-    process.stdout.write(message);
+    this.print(message);
   }
 
   /**
@@ -114,7 +126,7 @@ export class Logger {
    */
   printfln(...args: unknown[]): void {
     const message = this.format(...args);
-    process.stdout.write(message + "\n");
+    this.print(message + "\n");
   }
 
   /**
@@ -228,8 +240,9 @@ export class Logger {
         break;
     }
 
+    const proc = this.sprintLevel(level, ...this.startedArgs);
     const result = bold(color(message));
-    this.printfln(`\r${this.sprintLevel(level, ...this.startedArgs)} ... ${result}`);
+    this.printfln(`\r${proc} ... ${result}`);
   }
 
   [Symbol.dispose]() {
