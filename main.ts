@@ -1,5 +1,6 @@
 import { sprintf } from "@std/fmt/printf";
 import { blue, gray, green, magenta, red, yellow } from "@std/fmt/colors";
+import process from "node:process";
 
 /**
  * Enum representing the starting states of the logger.
@@ -77,9 +78,7 @@ export class Logger {
       this.end("completed");
     }
 
-    Deno.stdout.write(
-      new TextEncoder().encode(message),
-    );
+    process.stdout.write(message);
   }
 
   /**
@@ -88,7 +87,7 @@ export class Logger {
    */
   inline(...args: unknown[]) {
     const message = this.format(...args);
-    Deno.stdout.write(new TextEncoder().encode(message));
+    process.stdout.write(message);
   }
 
   /**
