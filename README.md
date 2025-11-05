@@ -66,6 +66,7 @@ logger.end("completed"); // Ignored
 // Output: ✖ [MyApp] An error occurred
 ```
 
-> **Warning** `logger.end` will **not** be automatically called before
-> `console.log` or `stdout/stderr.write`. Please ensure you use `logger.end` or
-> other log methods to properly end a continuous log.
+> [!WARNING]
+> `logger.end` will **not** be automatically called before `console.log` or
+> `stdout/stderr.write`. Please ensure you use `logger.end` or other log methods
+> to properly end a continuous log.
