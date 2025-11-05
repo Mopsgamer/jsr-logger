@@ -42,20 +42,21 @@ Deno.test("Logger.sprintLevel with no level returns uncolored prefix", () => {
 
 Deno.test("Logger.sprintStart", () => {
   using logger = new Logger("TestApp");
-  const result = logger.sprintStart(undefined, "plain");
+  const result = logger.sprintTask(undefined, "plain");
   assertEquals(
-    result,
+    result.started,
     magenta("- [TestApp]") + " " + brightBlack("undefined") + " " +
       green("'plain'") + " ...",
   );
-});
-
-Deno.test("Logger.sprintEnd", () => {
-  using logger = new Logger("TestApp");
-  const result = logger.sprintEnd(["test"], "skipped");
   assertEquals(
-    result,
-    gray("✓ [TestApp]") + " test ... " + gray("skipped"),
+    result.skipped,
+    gray("✓ [TestApp]") + " " + brightBlack("undefined") + " " +
+      green("'plain'") + " ... " + gray("skipped"),
+  );
+  assertEquals(
+    result.completed,
+    green("✓ [TestApp]") + " " + brightBlack("undefined") + " " +
+      green("'plain'") + " ... " + bold(green("done")),
   );
 });
 
