@@ -74,6 +74,28 @@ logger.task({
 });
 ```
 
+> [!WARNING]
+> Any exceptions thrown within the task runner aren't printed by default.
+
+If you want to log exceptions, you can use the `printErrors` wrapper:
+
+```ts
+import { Logger, printErrors } from "@m234/logger";
+import { delay } from "@std/async/delay";
+
+const logger = new Logger({ prefix: "MyApp" });
+logger.task({
+  text: "Operating",
+}).startRunner(printErrors(
+  logger,
+  async ({ task }) => {
+    await delay(1000);
+    throw new Error("test")
+  },
+  "warn" // optional, defaults to "error"
+));
+```
+
 ### More examples
 
 - [scripts/example-ora.ts](https://github.com/Mopsgamer/jsr-logger/blob/main/scripts/example-ora.ts):

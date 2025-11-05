@@ -93,7 +93,10 @@ export type TaskStateStart = "started" | "idle";
  */
 export type TaskStateEnd = "completed" | "aborted" | "failed" | "skipped";
 
-const taskStateEnd = [
+/**
+ * Array of valid end states for tasks.
+ */
+export const taskStateEnd = [
   "failed",
   "completed",
   "aborted",
@@ -117,6 +120,91 @@ export type AnyRunner =
   | Promise<TaskStateEnd | void>
   | TaskRunner<TaskStateEnd | void>
   | TaskRunner<Promise<TaskStateEnd | void>>;
+
+function catchState(e: unknown, disposeState: TaskStateEnd): TaskStateEnd {
+  if (e === undefined) {
+    return disposeState;
+  }
+  if (taskStateEnd.includes(e as TaskStateEnd)) {
+    return e as TaskStateEnd;
+  }
+  return "failed";
+}
+
+/**
+ * Starts a task with a given runner function.
+ * @param task The task to start.
+ * @param runner A function that returns an end state.
+ */
+export function startRunner(
+  task: Task,
+  runner: TaskRunner<TaskRunnerReturn>,
+): Task;
+export function startRunner(
+  task: Task,
+  runner: Promise<TaskRunnerReturn>,
+): Promise<Task>;
+export function startRunner(
+  task: Task,
+  runner: TaskRunner<Promise<TaskRunnerReturn>>,
+): Promise<Task>;
+export function startRunner(task: Task, runner: AnyRunner): Promise<Task> | Task {
+  task.start();
+  try {
+    const state = runner instanceof Promise
+      ? runner
+      : runner({ task, list: [...taskList] });
+    if (state instanceof Promise) {
+      return new Promise<Task>((resolve, reject) => {
+        Promise.resolve(state).then((state) => {
+          resolve(task.end(state ?? task.disposeState));
+        }).catch((e) => {
+          resolve(task.end(catchState(e, task.disposeState)));
+        });
+      });
+    } else {
+      task.end(state ?? task.disposeState);
+    }
+  } catch (e) {
+    task.end(catchState(e, task.disposeState));
+  }
+  return task;
+}
+
+/**
+ * Wraps a task runner to log any exceptions using the provided logger.
+ * @param logger - The logger to use for logging errors. The prefix used is the one set in the logger instance.
+ * @param runner - The task runner or promise to wrap.
+ * @param level - The log level to use for logging errors. Defaults to "error".
+ */
+export function printErrors(
+  logger: Logger,
+  runner: TaskRunner<TaskRunnerReturn>,
+  level?: LogLevel,
+): TaskRunner<TaskRunnerReturn>;
+export function printErrors(
+  logger: Logger,
+  runner: Promise<TaskRunnerReturn>,
+  level?: LogLevel,
+): Promise<TaskRunnerReturn>;
+export function printErrors(
+  logger: Logger,
+  runner: TaskRunner<Promise<TaskRunnerReturn>>,
+  level?: LogLevel,
+): TaskRunner<Promise<TaskRunnerReturn>>;
+export function printErrors(logger: Logger, runner: AnyRunner, level: LogLevel = "error"): any {
+  return (async (options) => {
+    try {
+      if (runner instanceof Promise) {
+        return await runner;
+      }
+      return await runner(options);
+    } catch (e) {
+      logger[level](format(e));
+      throw e;
+    }
+  }) as TaskRunner<any>;
+}
 
 /**
  * Return type of the task runner.
@@ -161,7 +249,6 @@ export type TaskOptions = LoggerOptions & {
    * @default "completed"
    */
   disposeState?: TaskStateEnd;
-
   /**
    * Indentation level.
    * @defult 0
@@ -195,6 +282,11 @@ export class Task implements Disposable {
     return result;
   }
 
+  /**
+   * Generates indentation for a task.
+   * @param task - The task to generate indentation for.
+   * @returns A string representing the indentation.
+   */
   static indent = function (task: Task): string {
     return "  | ".repeat(task.indent);
   };
@@ -203,12 +295,10 @@ export class Task implements Disposable {
    * Indentation level.
    */
   indent: number;
-
   /**
    * Whether the task is disabled.
    */
   disabled: boolean;
-
   /**
    * The current state of the task.
    */
@@ -217,7 +307,6 @@ export class Task implements Disposable {
    * The state to set when the task is disposed.
    */
   disposeState: TaskStateEnd;
-
   /**
    * The prefix for the task.
    */
@@ -286,35 +375,7 @@ export class Task implements Disposable {
   startRunner(runner: Promise<TaskRunnerReturn>): Promise<Task>;
   startRunner(runner: TaskRunner<Promise<TaskRunnerReturn>>): Promise<Task>;
   startRunner(runner: AnyRunner): Promise<Task> | Task {
-    this.start();
-    function catchState(e: unknown, disposeState: TaskStateEnd): TaskStateEnd {
-      if (e === undefined) {
-        return disposeState;
-      }
-      if (taskStateEnd.includes(e as TaskStateEnd)) {
-        return e as TaskStateEnd;
-      }
-      return "failed";
-    }
-    try {
-      const state = runner instanceof Promise
-        ? runner
-        : runner({ task: this, list: [...taskList] });
-      if (state instanceof Promise) {
-        return new Promise<Task>((resolve, reject) => {
-          Promise.resolve(state).then((state) => {
-            resolve(this.end(state ?? this.disposeState));
-          }).catch((e) => {
-            resolve(this.end(catchState(e, this.disposeState)));
-          });
-        });
-      } else {
-        this.end(state ?? this.disposeState);
-      }
-    } catch (e) {
-      this.end(catchState(e, this.disposeState));
-    }
-    return this;
+    return startRunner(this, runner as any);
   }
 
   [Symbol.dispose]() {

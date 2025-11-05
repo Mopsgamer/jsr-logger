@@ -8,8 +8,14 @@ import {
   red,
   yellow,
 } from "@std/fmt/colors";
-import { format, Logger, Task, type TaskStateEnd } from "./main.ts";
-import { assertEquals } from "jsr:@std/assert";
+import {
+  format,
+  Logger,
+  printErrors,
+  Task,
+  type TaskStateEnd,
+} from "./main.ts";
+import { assert, assertEquals } from "jsr:@std/assert";
 import { stripVTControlCharacters } from "node:util";
 import { mutex, state, taskList } from "./render.ts";
 import { patchOutput } from "./output-patcher.test.ts";
@@ -177,14 +183,40 @@ Deno.test("Task.sprintList empty", () => {
   assertEquals(Task.sprintList(), "");
 });
 
+Deno.test("printErrors", async () => {
+  const { output, outputUnpatch } = patchOutput();
+  taskList.length = 0;
+  const logger = new Logger({ prefix: "TestApp" });
+
+  logger.task({ text: "1" }).startRunner(printErrors(logger, () => {
+    throw new Error("test");
+  }));
+  assert(output.some((out) => out.includes("Error: test")));
+  output.length = 0;
+  const p = new Promise<void>((_, reject) => {
+    reject(new Error("test"));
+  });
+  logger.task({ text: "2" }).startRunner(
+    printErrors(logger, p),
+  );
+  try {
+    await p;
+  } catch {
+    assert(output.some((out) => out.includes("Error: test")));
+  }
+  outputUnpatch();
+});
+
 Deno.test("task.startRunner", async (t) => {
+  taskList.length = 0;
   const logger = new Logger({ prefix: "TestApp" });
 
   let asyncTask: Promise<Task>, task: Task;
 
   await t.step({
     name: "return/resolve",
-    async fn(t) {
+    async fn() {
+      taskList.length = 0;
       asyncTask = logger.task({ text: "1" }).startRunner(
         Promise.resolve<TaskStateEnd>("failed"),
       );
@@ -209,6 +241,7 @@ Deno.test("task.startRunner", async (t) => {
   await t.step({
     name: "throw/reject",
     async fn() {
+      taskList.length = 0;
       asyncTask = logger.task({
         text: "1",
       })
