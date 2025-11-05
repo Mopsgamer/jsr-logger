@@ -145,7 +145,7 @@ export class Logger {
     let prefix: string;
     switch (level) {
       case "info":
-        prefix = blue("🛈 " + this.prefix);
+        prefix = blue("ℹ " + this.prefix);
         break;
       case "warn":
         prefix = yellow("⚠ " + this.prefix);

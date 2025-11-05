@@ -1,7 +1,7 @@
 {
   "name": "@m234/logger",
   "description": "A colorful logger with the ability to log \"Processing ... done\".",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "tasks": {
     "publish": {
       "command": "deno publish",
@@ -16,7 +16,7 @@
       "command": "deno fmt",
       "dependencies": ["badge:tests"]
     },
-    "badge:tests": "deno run --allow-run=deno -R=assets -W=assets scripts/badge-tests.ts"
+    "badge:tests": "deno run -A scripts/badge-tests.ts"
   },
   "lint": {
     "rules": {

@@ -101,7 +101,7 @@ Deno.test("Logger.info logs informational messages", () => {
       using logger = new Logger("TestApp");
       logger.info("This is an informational message.");
     },
-    `${blue("🛈 [TestApp]")} This is an informational message.\n`,
+    `${blue("ℹ [TestApp]")} This is an informational message.\n`,
   );
 });
 
@@ -255,7 +255,7 @@ Deno.test("Logger.start is completed with Logger.info", () => {
     },
     `${magenta("- [TestApp]")} Operating ...\x1B[?25l`,
     `\r${green("✓ [TestApp]")} Operating ... ${bold(green("done"))}\x1B[?25h\n`,
-    `${blue("🛈 [TestApp]")} test\n`,
+    `${blue("ℹ [TestApp]")} test\n`,
   );
 });
 
