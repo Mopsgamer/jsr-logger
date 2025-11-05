@@ -2,6 +2,7 @@ import {
   blue,
   bold,
   getColorEnabled,
+  gray,
   green,
   magenta,
   red,
@@ -18,7 +19,7 @@ export type LoggerStateStart = "started" | "idle";
 /**
  * Enum representing the end states of the logger.
  */
-export type LoggerStateEnd = "completed" | "aborted" | "failed";
+export type LoggerStateEnd = "completed" | "aborted" | "failed" | "skipped";
 
 /**
  * Enum representing the possible states of the logger.
@@ -28,7 +29,7 @@ export type LoggerState = LoggerStateStart | LoggerStateEnd;
 /**
  * Logger levels for formatted console output.
  */
-type LoggerLevel = "info" | "warn" | "error" | "success";
+export type LoggerLevel = "info" | "warn" | "error" | "success";
 
 /**
  * Logger class for formatted console output.
@@ -60,7 +61,7 @@ export class Logger {
   /**
    * The arguments passed to the start method.
    */
-  private startedArgs: unknown[] = [];
+  private startArgs: unknown[] = [];
 
   /**
    * Creates a new Logger instance.
@@ -155,6 +156,53 @@ export class Logger {
     return `${prefix} ${this.format(...args)}`;
   }
 
+  sprintStart(...args: unknown[]): string {
+    const prefix = magenta("- " + this.prefix);
+    return `${prefix} ${this.format(...args)} ...`;
+  }
+
+  /**
+   * Returns a formatted end message string for a continuous log without side effects.
+   * @param stateEnd - The end state of the continuous log. Defaults to "completed".
+   */
+  sprintEnd(
+    startArgs: unknown[],
+    stateEnd: LoggerStateEnd = "completed",
+  ): string {
+    let message: string;
+    let level: LoggerLevel;
+    let color: (message: string) => string;
+    switch (stateEnd) {
+      case "failed":
+        message = "failed";
+        level = "error";
+        color = red;
+        break;
+      case "aborted":
+        message = "aborted";
+        level = "warn";
+        color = yellow;
+        break;
+      case "skipped":
+        message = "skipped";
+        level = "success";
+        color = gray;
+        const prefix = gray("✓ " + this.prefix);
+        const proc = `${prefix} ${this.format(...startArgs)}`;
+        return `${proc} ... ${color(message)}`;
+        break;
+      case "completed":
+      default:
+        message = "done";
+        level = "success";
+        color = green;
+        break;
+    }
+
+    const proc = this.sprintLevel(level, ...startArgs);
+    return `${proc} ... ${bold(color(message))}`;
+  }
+
   /**
    * Logs an informational message.
    * @param args - The message and optional arguments to log.
@@ -198,46 +246,22 @@ export class Logger {
    */
   start(...args: unknown[]): void {
     if (this.#state === "started") this.end();
-    this.startedArgs = args;
-    const prefix = magenta("- " + this.prefix);
-    this.print(`${prefix} ${this.format(...args)} ...`);
+    this.startArgs = args;
+    process.stdout.write('\x1B[?25l');
+    this.print(this.sprintStart(...args));
     this.#state = "started";
   }
 
   /**
-   * Ends any ongoing continuous log, marking it as completed, aborted, or failed.
+   * Ends any ongoing continuous log.
    * Ignored if the `start` method was not called.
    * @param stateEnd - The end state of the continuous log. Defaults to "completed".
    */
-  end(stateEnd?: LoggerStateEnd): void {
+  end(stateEnd: LoggerStateEnd = "completed"): void {
     if (this.#state !== "started") return;
-    stateEnd ??= "completed";
     this.#state = stateEnd;
-
-    let message: string;
-    let level: LoggerLevel;
-    let color: (message: string) => string;
-    switch (stateEnd) {
-      case "failed":
-        message = "failed";
-        level = "error";
-        color = red;
-        break;
-      case "aborted":
-        message = "aborted";
-        level = "warn";
-        color = yellow;
-        break;
-      default:
-        message = "done";
-        level = "success";
-        color = green;
-        break;
-    }
-
-    const proc = this.sprintLevel(level, ...this.startedArgs);
-    const result = bold(color(message));
-    this.printfln(`\r${proc} ... ${result}`);
+    this.printfln("\r" + this.sprintEnd(this.startArgs, stateEnd));
+    process.stdout.write('\x1B[?25h');
   }
 
   [Symbol.dispose]() {
