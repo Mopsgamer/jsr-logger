@@ -228,6 +228,16 @@ Deno.test("task.startRunner", async () => {
     Promise.resolve("failed"),
   );
   assertEquals(task.state, "failed");
+
+  task = await logger.task({ text: "state from throw" }).startRunner(() => {
+    throw "aborted";
+  });
+  assertEquals(task.state, "aborted");
+
+  task = await logger.task({ text: "catch error" }).startRunner(() => {
+    throw new Error();
+  });
+  assertEquals(task.state, "failed");
 });
 
 Deno.test("task[Symbol.dispose]", () => {

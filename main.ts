@@ -92,6 +92,13 @@ export type TaskStateStart = "started" | "idle";
  */
 export type TaskStateEnd = "completed" | "aborted" | "failed" | "skipped";
 
+const taskStateEnd = [
+  "failed",
+  "completed",
+  "aborted",
+  "skipped",
+] as const satisfies TaskStateEnd[];
+
 /**
  * Enum representing the possible states of the task.
  */
@@ -258,10 +265,18 @@ export class Task implements Disposable {
       | Promise<TaskStateEnd>,
   ): Promise<Task> {
     this.state = "started";
-    const state = runner instanceof Promise
-      ? await runner
-      : await runner({ task: this, list: [...list] });
-    this.state = state;
+    try {
+      const state = runner instanceof Promise
+        ? await runner
+        : await runner({ task: this, list: [...list] });
+      this.state = state;
+    } catch (e) {
+      if (taskStateEnd.includes(e as TaskStateEnd)) {
+        this.state = e as TaskStateEnd;
+      } else {
+        this.state = "failed";
+      }
+    }
     return this;
   }
 
