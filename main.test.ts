@@ -4,6 +4,27 @@ import { assertEquals } from "@std/assert";
 import process from "node:process";
 import { stripVTControlCharacters } from "node:util";
 
+function expectOutput(
+  startup: () => void,
+  ...lineList: (string | undefined)[]
+) {
+  const output: string[] = [];
+  const originalWrite = process.stdout.write;
+  process.stdout.write = (data: string): boolean => {
+    output.push(data);
+    return true;
+  };
+
+  try {
+    startup();
+    for (const [i, line] of lineList.entries()) {
+      assertEquals(output[i], line);
+    }
+  } finally {
+    process.stdout.write = originalWrite;
+  }
+}
+
 Deno.test("Logger.sprintLevel with no level returns uncolored prefix", () => {
   using logger = new Logger("TestApp");
   const result = logger.sprintLevel(undefined, "plain");
@@ -44,27 +65,6 @@ Deno.test("Logger.format logs array arg right", () => {
   using logger = new Logger("TestApp");
   assertEquals(stripVTControlCharacters(logger.format([])), `[ [length]: 0 ]`);
 });
-
-function expectOutput(
-  startup: () => void,
-  ...lineList: (string | undefined)[]
-) {
-  const output: string[] = [];
-  const originalWrite = process.stdout.write;
-  process.stdout.write = (data: string): boolean => {
-    output.push(data);
-    return true;
-  };
-
-  try {
-    startup();
-    for (const [i, line] of lineList.entries()) {
-      assertEquals(output[i], line);
-    }
-  } finally {
-    process.stdout.write = originalWrite;
-  }
-}
 
 Deno.test("Logger.info logs informational messages", () => {
   expectOutput(
@@ -215,7 +215,25 @@ Deno.test("Logger.start is completed with Logger.info", () => {
   );
 });
 
-Deno.test("Logger.endDisposable should be completed", () => {
+Deno.test("Logger second start ends previous if not ended", () => {
+  expectOutput(
+    () => {
+      using logger = new Logger("TestApp");
+      logger.start("Operating 1");
+      logger.start("Operating 2");
+      logger.start("Operating 3");
+      logger.end();
+    },
+    `${magenta("- [TestApp]")} Operating 1 ...`,
+    `\r${green("✓ [TestApp]")} Operating 1 ... ${bold(green("done"))}\n`,
+    `${magenta("- [TestApp]")} Operating 2 ...`,
+    `\r${green("✓ [TestApp]")} Operating 2 ... ${bold(green("done"))}\n`,
+    `${magenta("- [TestApp]")} Operating 3 ...`,
+    `\r${green("✓ [TestApp]")} Operating 3 ... ${bold(green("done"))}\n`,
+  );
+});
+
+Deno.test("Logger dispose works", () => {
   expectOutput(
     () => {
       using logger = new Logger("TestApp");
@@ -228,9 +246,6 @@ Deno.test("Logger.endDisposable should be completed", () => {
     `${magenta("- [TestApp]")} Operating ...`,
     `\r${green("✓ [TestApp]")} Operating ... ${bold(green("done"))}\n`,
   );
-});
-
-Deno.test("Logger.endDisposable should be completed after", () => {
   expectOutput(
     () => {
       using logger = new Logger("TestApp");
