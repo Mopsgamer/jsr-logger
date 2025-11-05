@@ -3,6 +3,8 @@ import { delay } from "@std/async";
 
 const logger = new Logger({ prefix: "@m234/logger" });
 
+Deno.env.set("CI", "TRUE");
+
 logger.info("Info message.");
 logger.warn("Warn message.");
 logger.error("Error message.");
@@ -22,9 +24,9 @@ setTimeout(() => task2.state = "aborted", 7000);
 
 let task3 = logger.task("Processing 3/3");
 task3.state = "started";
-let task31 = task3.task("Subtask");
+let task31 = task3.task("Sub-task");
 task31.state = "started";
-let task311 = task31.task("Subtask");
+let task311 = task31.task("Sub-sub-task");
 task31.state = "started";
 setTimeout(() => task311.state = "completed", 200);
 setTimeout(() => task31.state = "completed", 200);
