@@ -1,29 +1,36 @@
 import { sprintf } from "@std/fmt/printf";
-import { blue, green, magenta, red, yellow } from "@std/fmt/colors";
+import { blue, gray, green, magenta, red, yellow } from "@std/fmt/colors";
 
 /**
- * A Logger class for printing formatted messages to the console with various log levels.
+ * Enum representing the starting states of the logger.
  */
+export type LoggerStateStart = "started" | "idle";
+
+/**
+ * Enum representing the possible states of the logger.
+ */
+export type LoggerState =
+  | LoggerStateStart
+  | "completed"
+  | "aborted"
+  | "failed";
+
+/**
+ * Enum representing the end states of the logger.
+ * Excludes "started" and "idle" states.
+ */
+export type LoggerStateEnd = Exclude<LoggerState, LoggerStateStart>;
+
 export class Logger {
   private prefix: string;
-  #hasSucceeded: boolean = false;
+  #state: LoggerState = "idle";
 
   /**
-   * Indicates whether the last operation was successful.
-   * @returns `true` if the last operation failed, otherwise `false`.
+   * Gets the current state of the logger.
+   * @returns The current state of the logger.
    */
-  get hasSucceeded(): boolean {
-    return this.#hasSucceeded;
-  }
-
-  #isStarted: boolean = false;
-
-  /**
-   * Indicates whether a log operation is currently in progress.
-   * @returns `true` if a log operation is ongoing, otherwise `false`.
-   */
-  get isStarted(): boolean {
-    return this.#isStarted;
+  get state(): LoggerState {
+    return this.#state;
   }
 
   private startedArgs: unknown[] = [];
@@ -32,8 +39,8 @@ export class Logger {
    * Creates a new Logger instance.
    * @param prefix - A string to prefix all log messages. Defaults to an empty string.
    */
-  constructor(prefix: string = "") {
-    this.prefix = prefix ? `[${prefix}]` : "";
+  constructor(prefix: string) {
+    this.prefix = `[${prefix}]`;
   }
 
   /**
@@ -55,13 +62,22 @@ export class Logger {
    * @param message - The message to print.
    */
   print(message: string) {
-    if (this.isStarted) {
-      this.end(true);
+    if (this.#state === "started") {
+      this.end("completed");
     }
 
     Deno.stdout.write(
       new TextEncoder().encode(message),
     );
+  }
+
+  /**
+   * Logs a message inline without a newline.
+   * @param args - The message and optional arguments to log.
+   */
+  inline(...args: unknown[]) {
+    const message = this.format(...args);
+    Deno.stdout.write(new TextEncoder().encode(message));
   }
 
   /**
@@ -79,8 +95,8 @@ export class Logger {
    * @param args - The message and optional arguments to log.
    */
   error(...args: unknown[]) {
-    if (this.isStarted) {
-      this.end(false);
+    if (this.#state === "started") {
+      this.end("failed");
     }
 
     this.print(`${red("✖")} ${red(this.prefix)} ${this.format(...args)}\n`);
@@ -101,8 +117,8 @@ export class Logger {
    * @param args - The message and optional arguments to log.
    */
   success(...args: unknown[]) {
-    if (this.isStarted) {
-      this.end(true);
+    if (this.#state === "started") {
+      this.end("completed");
     }
 
     this.print(
@@ -119,33 +135,37 @@ export class Logger {
     this.print(
       `${magenta("-")} ${magenta(this.prefix)} ${this.format(...args)}...`,
     );
-    this.#isStarted = true;
+    this.#state = "started";
   }
 
   /**
-   * Ends a log operation, marking it as successful or failed.
-   * Ignored if already started.
-   * @param success - Whether the operation was successful.
+   * Ends a log operation, marking it as completed, aborted, or failed.
+   * Ignored if the logger is not in the "started" state.
+   * @param stateEnd - The end state of the operation. Defaults to "completed".
    */
-  end(success: boolean) {
-    if (!this.isStarted) return;
-    this.#hasSucceeded = success;
-    this.#isStarted = false;
-    const color = success ? green : red;
-    const message = success ? "done" : "fail";
+  end(stateEnd?: LoggerStateEnd) {
+    if (this.#state !== "started") return;
+    stateEnd ??= "completed";
+    this.#state = stateEnd;
+    let message: string, color: (str: string) => string;
+    switch (stateEnd) {
+      case "failed":
+        message = "failed";
+        color = red;
+        break;
+      case "aborted":
+        message = "aborted";
+        color = gray;
+        break;
+      default:
+        message = "done";
+        color = green;
+        break;
+    }
     this.inline(
       `\r${color("-")} ${color(this.prefix)} ${
         this.format(...this.startedArgs)
       }...${color(message)}\n`,
     );
-  }
-
-  /**
-   * Logs a message inline without a newline.
-   * @param args - The message and optional arguments to log.
-   */
-  inline(...args: unknown[]) {
-    const message = this.format(...args);
-    Deno.stdout.write(new TextEncoder().encode(message));
   }
 }

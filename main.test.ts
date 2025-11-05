@@ -1,6 +1,6 @@
 import { blue, green, magenta, red, yellow } from "@std/fmt/colors";
 import { Logger } from "./main.ts";
-import { assert, assertEquals } from "@std/assert";
+import { assertEquals } from "@std/assert";
 
 Deno.test("Logger.format logs args right", () => {
   const logger = new Logger("TestApp");
@@ -102,8 +102,8 @@ Deno.test("Logger.start and end log operations", () => {
 
   try {
     logger.start("Operating");
-    logger.end(true);
-    assert(logger.hasSucceeded);
+    logger.end("completed");
+    assertEquals(logger.state, "completed");
     assertEquals(
       output[0],
       `${magenta("-")} ${magenta("[TestApp]")} Operating...`,
@@ -115,22 +115,22 @@ Deno.test("Logger.start and end log operations", () => {
     output.length = 0;
 
     logger.start("Operating");
-    logger.end(false);
-    assert(!logger.hasSucceeded);
+    logger.end("failed");
+    assertEquals(logger.state, "failed");
     assertEquals(
       output[0],
       `${magenta("-")} ${magenta("[TestApp]")} Operating...`,
     );
     assertEquals(
       output[1],
-      `\r${red("-")} ${red("[TestApp]")} Operating...${red("fail")}\n`,
+      `\r${red("-")} ${red("[TestApp]")} Operating...${red("failed")}\n`,
     );
 
     output.length = 0;
 
     logger.start("Operating");
     logger.success("Succ");
-    assert(logger.hasSucceeded);
+    assertEquals(logger.state, "completed");
     assertEquals(
       output[0],
       `${magenta("-")} ${magenta("[TestApp]")} Operating...`,
@@ -145,7 +145,7 @@ Deno.test("Logger.start and end log operations", () => {
 
     logger.start("Operating");
     logger.info("test");
-    assert(logger.hasSucceeded);
+    assertEquals(logger.state, "completed");
     assertEquals(
       output[0],
       `${magenta("-")} ${magenta("[TestApp]")} Operating...`,

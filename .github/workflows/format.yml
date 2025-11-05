@@ -1,0 +1,29 @@
+name: Code format
+
+on:
+    pull_request:
+    workflow_dispatch:
+
+jobs:
+    format-code:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: denoland/setup-deno@v2
+              with:
+                  deno-version: v2.x
+            - name: Checking Deno
+              run: |
+                  deno lint
+                  deno fmt
+                  deno fmt --check
+                  deno check .
+                  deno run -A scripts/init.ts nodb
+                  deno install --allow-scripts
+                  deno task compile:client
+            - name: Push formatting changes (if any)
+              run: |
+                  git config --global user.name "github-actions"
+                  git config --global user.email "github-actions@github.com"
+                  git add .
+                  git diff --quiet || (git commit -m "style: code formatting" && git push)

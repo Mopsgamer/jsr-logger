@@ -37,14 +37,11 @@ import { Logger } from "@m234/logger";
 const logger = new Logger("MyApp");
 logger.start("Operating");
 // ⓘ [MyApp] Operating...
-logger.end(true); // clears the line
+logger.end(); // clears the line
 // ✔ [MyApp] Operating...done
 ```
 
-The `error` and `success` methods can be used to end the operation:
-
-> [!NOTE]
-> The `info` and `warn` methods are ending the operation as success.
+The `error`, `success`, `info`, `warn` methods can be used to end the operation. All except `error` will end the operation as completed:
 
 ```ts
 import { Logger } from "@m234/logger";
@@ -52,7 +49,12 @@ const logger = new Logger("MyApp");
 logger.start("Operating");
 // - [MyApp] Operating...
 logger.error("An error occurred"); // clears the line
-logger.end(true); // ignored
-// ✖ [MyApp] Operating...fail
+logger.end("completed"); // ignored
+// ✖ [MyApp] Operating...failed
 // ✖ [MyApp] An error occurred
 ```
+
+> [!WARN]
+> `logger.end` will <u>**not**</u> automatically used
+> before `console.log` and `stdout/stderr.write`.
+> Please, use `logger.end` and other log-methods to end the operations manually.
