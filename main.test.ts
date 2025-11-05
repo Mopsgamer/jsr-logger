@@ -129,7 +129,7 @@ Deno.test("Logger.error logs error messages", () => {
   expectOutput(
     () => {
       using logger = new Logger("TestApp");
-      logger.start("Never");
+      logger.task("Never");
       logger.error("This is an error.");
     },
     `${magenta("- [TestApp]")} Never ...\x1B[?25l`,
@@ -182,9 +182,9 @@ Deno.test("Logger.start is completed", () => {
   expectOutput(
     () => {
       using logger = new Logger("TestApp");
-      logger.start("Operating");
+      logger.task("Operating");
       logger.end("completed");
-      assertEquals(logger.state, "completed");
+      assertEquals(logger.#state, "completed");
     },
     `${magenta("- [TestApp]")} Operating ...\x1B[?25l`,
     `\r${green("✓ [TestApp]")} Operating ... ${bold(green("done"))}\x1B[?25h\n`,
@@ -195,9 +195,9 @@ Deno.test("Logger.start is failed", () => {
   expectOutput(
     () => {
       using logger = new Logger("TestApp");
-      logger.start("Operating");
+      logger.task("Operating");
       logger.end("failed");
-      assertEquals(logger.state, "failed");
+      assertEquals(logger.#state, "failed");
     },
     `${magenta("- [TestApp]")} Operating ...\x1B[?25l`,
     `\r${red("✗ [TestApp]")} Operating ... ${bold(red("failed"))}\x1B[?25h\n`,
@@ -208,9 +208,9 @@ Deno.test("Logger.start is aborted", () => {
   expectOutput(
     () => {
       using logger = new Logger("TestApp");
-      logger.start("Operating");
+      logger.task("Operating");
       logger.end("aborted");
-      assertEquals(logger.state, "aborted");
+      assertEquals(logger.#state, "aborted");
     },
     `${magenta("- [TestApp]")} Operating ...\x1B[?25l`,
     `\r${yellow("⚠ [TestApp]")} Operating ... ${
@@ -223,9 +223,9 @@ Deno.test("Logger.start is skipped", () => {
   expectOutput(
     () => {
       using logger = new Logger("TestApp");
-      logger.start("Operating");
+      logger.task("Operating");
       logger.end("skipped");
-      assertEquals(logger.state, "skipped");
+      assertEquals(logger.#state, "skipped");
     },
     `${magenta("- [TestApp]")} Operating ...\x1B[?25l`,
     `\r${gray("✓ [TestApp]")} Operating ... ${gray("skipped")}\x1B[?25h\n`,
@@ -236,9 +236,9 @@ Deno.test("Logger.start is completed with Logger.success", () => {
   expectOutput(
     () => {
       using logger = new Logger("TestApp");
-      logger.start("Operating");
+      logger.task("Operating");
       logger.success("Succ");
-      assertEquals(logger.state, "completed");
+      assertEquals(logger.#state, "completed");
     },
     `${magenta("- [TestApp]")} Operating ...\x1B[?25l`,
     `\r${green("✓ [TestApp]")} Operating ... ${bold(green("done"))}\x1B[?25h\n`,
@@ -249,9 +249,9 @@ Deno.test("Logger.start is completed with Logger.info", () => {
   expectOutput(
     () => {
       using logger = new Logger("TestApp");
-      logger.start("Operating");
+      logger.task("Operating");
       logger.info("test");
-      assertEquals(logger.state, "completed");
+      assertEquals(logger.#state, "completed");
     },
     `${magenta("- [TestApp]")} Operating ...\x1B[?25l`,
     `\r${green("✓ [TestApp]")} Operating ... ${bold(green("done"))}\x1B[?25h\n`,
@@ -263,9 +263,9 @@ Deno.test("Logger second start ends previous if not ended", () => {
   expectOutput(
     () => {
       using logger = new Logger("TestApp");
-      logger.start("Operating 1");
-      logger.start("Operating 2");
-      logger.start("Operating 3");
+      logger.task("Operating 1");
+      logger.task("Operating 2");
+      logger.task("Operating 3");
       logger.end();
     },
     `${magenta("- [TestApp]")} Operating 1 ...\x1B[?25l`,
@@ -287,11 +287,11 @@ Deno.test("Logger dispose works", () => {
   expectOutput(
     () => {
       using logger = new Logger("TestApp");
-      logger.start("Operating");
+      logger.task("Operating");
       {
         using operation = logger;
       }
-      assertEquals(logger.state, "completed");
+      assertEquals(logger.#state, "completed");
     },
     `${magenta("- [TestApp]")} Operating ...\x1B[?25l`,
     `\r${green("✓ [TestApp]")} Operating ... ${bold(green("done"))}\x1B[?25h\n`,
@@ -299,9 +299,9 @@ Deno.test("Logger dispose works", () => {
   expectOutput(
     () => {
       using logger = new Logger("TestApp");
-      logger.start("Operating");
+      logger.task("Operating");
       using operation = logger;
-      assertEquals(logger.state, "started");
+      assertEquals(logger.#state, "started");
     },
     `${magenta("- [TestApp]")} Operating ...\x1B[?25l`,
     `\r${green("✓ [TestApp]")} Operating ... ${bold(green("done"))}\x1B[?25h\n`,
