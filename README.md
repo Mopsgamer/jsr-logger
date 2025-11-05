@@ -19,11 +19,14 @@ logger.println("Hello, World!");
 logger.printf("Hello, World! %o", true);
 logger.printfln("Hello, World! %o", true);
 
+// String-only formatting (no side effects):
+ora.text = logger.sprintLevel("info", "This is an informational message.");
+
 logger.info("This is an informational message.");
 logger.warn("This is a warning.");
 logger.error("This is an error.");
 logger.success("This is a success message.");
-// Note: There are no 'log', 'debug', or 'verbose' methods.
+// Note: There are no 'log' (use 'printfln'), 'debug', or 'verbose' methods.
 
 logger.start("Operating");
 logger.end();
