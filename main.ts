@@ -28,9 +28,11 @@ export function format(...args: unknown[]): string {
 }
 
 /**
- * Returns a formatted message string for a given level (no side effects).
- * @param level - The log level: 'info', 'warn', 'error', 'success', or undefined/null for no level.
- * @param args - The message and optional arguments to log.
+ * Wraps a message for a given log level.
+ * @param prefix - The prefix to use.
+ * @param message - The message to format.
+ * @param level - The log level.
+ * @returns A formatted string.
  */
 export function sprintLevel(
   prefix: string,
@@ -58,7 +60,10 @@ export function sprintLevel(
 }
 
 /**
- * Returns a formatted message string for the end of a continuous log.
+ * Wraps a message for a given synthetic task.
+ * @param prefix - The prefix to use.
+ * @param text - The task text.
+ * @returns A structure representing the formatted messages for each task state.
  */
 export function sprintTask(prefix: string, text: string): TaskSprint {
   const left = ` ${text} ...`;
@@ -78,20 +83,23 @@ export function sprintTask(prefix: string, text: string): TaskSprint {
 }
 
 /**
- * Enum representing the starting states of the logger.
+ * Enum representing the starting states of the task.
  */
 export type TaskStateStart = "started" | "idle";
 
 /**
- * Enum representing the end states of the logger.
+ * Enum representing the end states of the task.
  */
 export type TaskStateEnd = "completed" | "aborted" | "failed" | "skipped";
 
 /**
- * Enum representing the possible states of the logger.
+ * Enum representing the possible states of the task.
  */
 export type TaskState = TaskStateStart | TaskStateEnd;
 
+/**
+ * Task callback.
+ */
 export type TaskRunner<R> = (options: { task: Task; list: Task[] }) => R;
 
 /**
@@ -99,23 +107,51 @@ export type TaskRunner<R> = (options: { task: Task; list: Task[] }) => R;
  */
 export type LogLevel = "info" | "warn" | "error" | "success";
 
+/**
+ * Options for the Logger class.
+ */
 export type LoggerOptions = {
+  /**
+   * Wrapped in square brackets.
+   */
   prefix: string;
+  /**
+   * Whether the logging is disabled.
+   * @defult false
+   */
   disabled?: boolean;
 };
 
-export type TaskOptions = Omit<LoggerOptions, "disabled"> & {
+/**
+ * Options for the Task class.
+ */
+export type TaskOptions = LoggerOptions & {
+  /**
+   * Task appearance text.
+   */
   text: string;
+  /**
+   * Initial task state.
+   * @default "idle"
+   */
   state?: TaskState;
 };
 
 type SetOptional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+
+/**
+ * Options for creating a subtask.
+ */
 export type SubtaskOptions = SetOptional<TaskOptions, "prefix">;
 
 /**
- * Logging interface for asynchronous procedure.
+ * Sticky process state logger. Default state is "idle", which makes it invisible.
  */
 export class Task implements Disposable {
+  /**
+   * Formats a list of tasks.
+   * @returns A formatted string that ends with a new line if there are any visible tasks.
+   */
   static sprintList(): string {
     const visibleTasks = list.filter((task) => task.state !== "idle");
     let result = "";
@@ -127,29 +163,50 @@ export class Task implements Disposable {
     return result;
   }
 
+  /**
+   * Whether the task is disabled.
+   */
+  disabled: boolean = false;
+
+  /**
+   * The current state of the task.
+   */
   state: TaskState = "idle";
+  /**
+   * The state to set when the task is disposed.
+   */
   disposeState: TaskState = "completed";
 
+  /**
+   * The prefix for the task.
+   */
   prefix: string;
+  /**
+   * Task appearance text.
+   */
   text: string;
 
   constructor(options: TaskOptions) {
     this.state = options.state ?? "idle";
     this.prefix = options.prefix;
     this.text = options.text;
+    this.disabled = options.disabled ?? false;
     list.push(this);
     renderer();
   }
 
   /**
-   * Returns a formatted message string for the end of a continuous log.
+   * Formats the task for logging.
+   * @returns A formatted string.
    */
   sprint(): string {
+    if (this.disabled) return "";
     return sprintTask(this.prefix, this.text)[this.state];
   }
 
   /**
-   * Sets the task state to "started" and begins rendering.
+   * Sets the task state to "started".
+   * @return The task instance for chaining.
    */
   start(): Task {
     this.state = "started";
@@ -157,7 +214,10 @@ export class Task implements Disposable {
   }
 
   /**
-   * Sets the task state to "completed" and ends rendering.
+   * Sets the task state to an end state.
+   * Refreshing will be continued until all tasks are in an end state.
+   * @param state - The end state.
+   * @return The task instance for chaining.
    */
   end(state: TaskStateEnd): Task {
     this.state = state;
@@ -166,6 +226,9 @@ export class Task implements Disposable {
 
   /**
    * Runs the task with a given runner function.
+   * Refreshing will be continued until all tasks are in an end state.
+   * @param runner - A function that returns an end state.
+   * @returns The task instance for chaining.
    */
   async startRunner(
     runner:
@@ -186,39 +249,39 @@ export class Task implements Disposable {
 }
 
 /**
- * Type representing the task sprint messages for the logger.
+ * Format type representing the task sprint messages.
  */
 export type TaskSprint = {
   [key in TaskState]: string;
 };
 
 /**
- * Logger class for formatted console output.
+ * Implements logging methods and task creation.
  */
 export class Logger {
   /**
-   * A string to prefix all log messages. Wrapped in square brackets.
+   * Wrapped in square brackets.
+   * A string to prefix all logging methods, except {@link Logger.print} and {@link Logger.println}.
+   * Affects {@link Logger.task}.
    */
   private prefix: string;
 
   /**
    * Whether the logger is disabled.
+   * Affects all logging methods, including {@link Logger.print} and {@link Logger.println}.
+   * Affects {@link Logger.task}.
    */
   public disabled: boolean;
 
-  /**
-   * Creates a new Logger instance.
-   * @param prefix - A string to prefix all log messages.
-   * @param disabled - Whether the logger is disabled. Defaults to `false`.
-   */
   constructor(options: LoggerOptions) {
     this.prefix = `[${options.prefix}]`;
     this.disabled = options.disabled ?? false;
   }
 
   /**
-   * Prints a message to the console without a new line. Ends any ongoing continuous log as a success.
+   * Prints a message to the console without a new line when there are no ongoing tasks.
    * @param message - The message to print.
+   * @returns A promise that resolves when the message has been printed.
    */
   async print(message: string): Promise<void> {
     if (this.disabled) return;
@@ -228,17 +291,19 @@ export class Logger {
   }
 
   /**
-   * Same as {@link print}, but adds new line.
+   * Same as {@link print}, but with a new line.
    * @param message - The message to print.
+   * @return A promise that resolves when the message has been printed.
    */
   println(message: string): Promise<void> {
     return this.print(message + "\n");
   }
 
   /**
-   * Returns a formatted message string for a given level (no side effects).
-   * @param level - The log level: 'info', 'warn', 'error', 'success', or undefined/null for no level.
-   * @param args - The message and optional arguments to log.
+   * Formats a message for a given level.
+   * @param message - The message to format.
+   * @param level - The log level.
+   * @returns A formatted string.
    */
   sprintLevel(
     message: string,
@@ -248,7 +313,9 @@ export class Logger {
   }
 
   /**
-   * Returns a formatted message string for the end of a continuous log.
+   * Formats a message for a synthetic task.
+   * @param text - The task text.
+   * @returns A structure representing the formatted messages for each task state.
    */
   sprintTask(text: string): TaskSprint {
     return sprintTask(this.prefix, text);
@@ -256,7 +323,8 @@ export class Logger {
 
   /**
    * Logs an informational message.
-   * @param args - The message and optional arguments to log.
+   * @param message - The message to log.
+   * @returns A promise that resolves when the message has been printed.
    */
   info(message: string): Promise<void> {
     return this.println(this.sprintLevel(message, "info"));
@@ -264,7 +332,8 @@ export class Logger {
 
   /**
    * Logs an error message. Ends any ongoing continuous log as a failure.
-   * @param args - The message and optional arguments to log.
+   * @param message - The message to log.
+   * @returns A promise that resolves when the message has been printed.
    */
   error(message: string): Promise<void> {
     return this.println(this.sprintLevel(message, "error"));
@@ -272,7 +341,8 @@ export class Logger {
 
   /**
    * Logs a warning message.
-   * @param args - The message and optional arguments to log.
+   * @param message - The message to log.
+   * @returns A promise that resolves when the message has been printed.
    */
   warn(message: string): Promise<void> {
     return this.println(this.sprintLevel(message, "warn"));
@@ -280,7 +350,8 @@ export class Logger {
 
   /**
    * Logs a success message.
-   * @param args - The message and optional arguments to log.
+   * @param message - The message to log.
+   * @returns A promise that resolves when the message has been printed.
    */
   success(message: string): Promise<void> {
     return this.println(this.sprintLevel(message, "success"));
@@ -289,11 +360,13 @@ export class Logger {
   /**
    * Starts a continuous log, printing a message with an ellipsis.
    * Can be ended by the `end` and other log-methods such as `info` and `error`.
-   * @param args - The message and optional arguments to log.
+   * @param options - Options for creating the task.
+   * @returns The created task.
    */
   task(options: SubtaskOptions): Task {
     return new Task({
       prefix: this.prefix,
+      disabled: this.disabled,
       ...options,
     });
   }
