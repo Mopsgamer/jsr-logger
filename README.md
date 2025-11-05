@@ -60,7 +60,7 @@ using logger = new Logger("MyApp");
 
 logger.start("Operating");
 // Output: - [MyApp] Operating...
-logger.error("An error occurred"); // Clears the line
+logger.error("An error occurred");
 logger.end("completed"); // Ignored
 // Output: ✖ [MyApp] Operating...failed
 // Output: ✖ [MyApp] An error occurred
