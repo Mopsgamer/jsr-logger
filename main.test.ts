@@ -57,7 +57,7 @@ Deno.test("Logger.info logs informational messages", () => {
       using logger = new Logger("TestApp");
       logger.info("This is an informational message.");
     },
-    `${blue("ⓘ [TestApp]")} This is an informational message.\n`,
+    `${blue("🛈 [TestApp]")} This is an informational message.\n`,
   );
 });
 
@@ -77,7 +77,7 @@ Deno.test("Logger.error logs error messages", () => {
       using logger = new Logger("TestApp");
       logger.error("This is an error.");
     },
-    `${red("✖ [TestApp]")} This is an error.\n`,
+    `${red("✗ [TestApp]")} This is an error.\n`,
   );
 });
 
@@ -89,8 +89,8 @@ Deno.test("Logger.error logs error messages", () => {
       logger.error("This is an error.");
     },
     `${magenta("- [TestApp]")} Never ...`,
-    `\r${red("✖ [TestApp]")} Never ... ${bold(red("failed"))}\n`,
-    `${red("✖ [TestApp]")} This is an error.\n`,
+    `\r${red("✗ [TestApp]")} Never ... ${bold(red("failed"))}\n`,
+    `${red("✗ [TestApp]")} This is an error.\n`,
   );
 });
 
@@ -100,7 +100,7 @@ Deno.test("Logger.success logs success messages", () => {
       using logger = new Logger("TestApp");
       logger.success("This is a success message.");
     },
-    `${green("✔ [TestApp]")} This is a success message.\n`,
+    `${green("✓ [TestApp]")} This is a success message.\n`,
   );
 });
 
@@ -143,7 +143,7 @@ Deno.test("Logger.start is completed", () => {
       assertEquals(logger.state, "completed");
     },
     `${magenta("- [TestApp]")} Operating ...`,
-    `\r${green("✔ [TestApp]")} Operating ... ${bold(green("done"))}\n`,
+    `\r${green("✓ [TestApp]")} Operating ... ${bold(green("done"))}\n`,
   );
 });
 
@@ -156,7 +156,7 @@ Deno.test("Logger.start is failed", () => {
       assertEquals(logger.state, "failed");
     },
     `${magenta("- [TestApp]")} Operating ...`,
-    `\r${red("✖ [TestApp]")} Operating ... ${bold(red("failed"))}\n`,
+    `\r${red("✗ [TestApp]")} Operating ... ${bold(red("failed"))}\n`,
   );
 });
 
@@ -182,7 +182,7 @@ Deno.test("Logger.start is completed with Logger.success", () => {
       assertEquals(logger.state, "completed");
     },
     `${magenta("- [TestApp]")} Operating ...`,
-    `\r${green("✔ [TestApp]")} Operating ... ${bold(green("done"))}\n`,
+    `\r${green("✓ [TestApp]")} Operating ... ${bold(green("done"))}\n`,
   );
 });
 
@@ -195,8 +195,8 @@ Deno.test("Logger.start is completed with Logger.info", () => {
       assertEquals(logger.state, "completed");
     },
     `${magenta("- [TestApp]")} Operating ...`,
-    `\r${green("✔ [TestApp]")} Operating ... ${bold(green("done"))}\n`,
-    `${blue("ⓘ [TestApp]")} test\n`,
+    `\r${green("✓ [TestApp]")} Operating ... ${bold(green("done"))}\n`,
+    `${blue("🛈 [TestApp]")} test\n`,
   );
 });
 
@@ -211,7 +211,7 @@ Deno.test("Logger.endDisposable should be completed", () => {
       assertEquals(logger.state, "completed");
     },
     `${magenta("- [TestApp]")} Operating ...`,
-    `\r${green("✔ [TestApp]")} Operating ... ${bold(green("done"))}\n`,
+    `\r${green("✓ [TestApp]")} Operating ... ${bold(green("done"))}\n`,
   );
 });
 
@@ -224,6 +224,6 @@ Deno.test("Logger.endDisposable should be completed after", () => {
       assertEquals(logger.state, "started");
     },
     `${magenta("- [TestApp]")} Operating ...`,
-    `\r${green("✔ [TestApp]")} Operating ... ${bold(green("done"))}\n`,
+    `\r${green("✓ [TestApp]")} Operating ... ${bold(green("done"))}\n`,
   );
 });
