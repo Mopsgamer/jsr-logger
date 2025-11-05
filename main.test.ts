@@ -233,12 +233,18 @@ Deno.test("task.startRunner", async () => {
 Deno.test("task[Symbol.dispose]", () => {
   const logger = new Logger({ prefix: "TestApp" });
 
-  const task = logger.task({ text: "0" });
+  const task = logger.task({ text: "0", disposeState: "failed" });
   {
     using op = task;
     assertEquals(op.state, "idle");
     op.start();
     assertEquals(op.state, "started");
+  }
+  assertEquals(task.state, "failed");
+
+  {
+    using op = task;
+    op.state = "completed";
   }
   assertEquals(task.state, "completed");
 });

@@ -18,7 +18,7 @@ export async function render(): Promise<boolean> {
 
   const lst = Task.sprintList();
   const changed = prevLog !== lst;
-  const newLines = newLineCount(prevLog, process.stdout.columns)
+  const newLines = newLineCount(prevLog, process.stdout.columns);
   if (changed) process.stdout.write("\x1B[1A\x1B[2K".repeat(newLines));
 
   if (changed) {

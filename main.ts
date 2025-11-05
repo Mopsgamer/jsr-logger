@@ -266,7 +266,9 @@ export class Task implements Disposable {
   }
 
   [Symbol.dispose]() {
-    this.state = this.disposeState;
+    if (this.state === "started") {
+      this.state = this.disposeState;
+    }
   }
 }
 
