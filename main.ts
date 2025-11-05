@@ -1,6 +1,14 @@
-import { sprintf } from "@std/fmt/printf";
-import { blue, bold, green, magenta, red, yellow } from "@std/fmt/colors";
+import {
+  blue,
+  bold,
+  getColorEnabled,
+  green,
+  magenta,
+  red,
+  yellow,
+} from "@std/fmt/colors";
 import process from "node:process";
+import { formatWithOptions } from "node:util";
 
 /**
  * Enum representing the starting states of the logger.
@@ -8,18 +16,14 @@ import process from "node:process";
 export type LoggerStateStart = "started" | "idle";
 
 /**
- * Enum representing the possible states of the logger.
- */
-export type LoggerState =
-  | LoggerStateStart
-  | "completed"
-  | "aborted"
-  | "failed";
-
-/**
  * Enum representing the end states of the logger.
  */
-export type LoggerStateEnd = Exclude<LoggerState, LoggerStateStart>;
+export type LoggerStateEnd = "completed" | "aborted" | "failed";
+
+/**
+ * Enum representing the possible states of the logger.
+ */
+export type LoggerState = LoggerStateStart | LoggerStateEnd;
 
 /**
  * Logger class for formatted console output.
@@ -61,12 +65,13 @@ export class Logger {
    * @returns A formatted string.
    */
   format(...args: unknown[]): string {
+    const colors = getColorEnabled();
     const [message, ...other] = args;
     if (typeof message == "string") {
-      return sprintf(message, ...other);
+      return formatWithOptions({ colors }, message, ...other);
     }
 
-    return args.map((a) => sprintf("%v", a)).join(" ");
+    return args.map((a) => formatWithOptions({ colors }, "%o", a)).join(" ");
   }
 
   /**
