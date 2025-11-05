@@ -158,7 +158,7 @@ Deno.test(
 Deno.test("Logger.start is completed", async () => {
   const logger = new Logger({ prefix: "TestApp" });
   const task = logger.task({ text: "Operating" }).end("completed");
-  await Task.mutex.acquire()
+  await Task.mutex.acquire();
   assertEquals(task.state, "completed");
-  Task.mutex.release()
+  Task.mutex.release();
 });
