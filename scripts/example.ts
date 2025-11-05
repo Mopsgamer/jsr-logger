@@ -28,3 +28,8 @@ setTimeout(() => {
 }, 4000);
 
 let task11 = task1.task({ text: "Thinking" }).startRunner(() => "skipped");
+
+await delay(1000);
+logger.success("DOing");
+await delay(9000);
+logger.success("DONE");
