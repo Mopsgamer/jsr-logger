@@ -116,12 +116,21 @@ export type TaskRunner<R> = (options: { task: Task; list: Task[] }) => R;
 /**
  * Union type representing any valid task runner.
  */
-export type AnyRunner =
+export type AnyRunner = SyncRunner | AsyncRunner;
+
+/**
+ * Synchronous task runner type.
+ */
+export type SyncRunner = TaskRunner<TaskStateEnd | void>;
+
+/**
+ * Asynchronous task runner type.
+ */
+export type AsyncRunner =
   | Promise<TaskStateEnd | void>
-  | TaskRunner<TaskStateEnd | void>
   | TaskRunner<Promise<TaskStateEnd | void>>;
 
-function catchState(e: unknown, disposeState: TaskStateEnd): TaskStateEnd {
+function catchEndState(e: unknown, disposeState: TaskStateEnd): TaskStateEnd {
   if (e === undefined) {
     return disposeState;
   }
@@ -131,19 +140,45 @@ function catchState(e: unknown, disposeState: TaskStateEnd): TaskStateEnd {
   return "failed";
 }
 
+function resolveEndState(
+  state: Promise<TaskStateEnd | void>,
+  task: Task,
+): Promise<Task> {
+  return new Promise<Task>((resolve, reject) => {
+    Promise.resolve(state).then((state) => {
+      resolve(task.end(state ?? task.disposeState));
+    }).catch((e) => {
+      resolve(task.end(catchEndState(e, task.disposeState)));
+    });
+  });
+}
+
 /**
  * Starts a task with a given runner function.
  * @param task The task to start.
  * @param runner A function that returns an end state.
+ * @returns The started task.
  */
 export function startRunner(
   task: Task,
   runner: TaskRunner<TaskRunnerReturn>,
 ): Task;
+/**
+ * Starts a task with a given runner function.
+ * @param task The task to start.
+ * @param runner A function that returns a promise of an end state.
+ * @returns A promise that resolves to the started task.
+ */
 export function startRunner(
   task: Task,
   runner: Promise<TaskRunnerReturn>,
 ): Promise<Task>;
+/**
+ * Starts a task with a given runner function.
+ * @param task The task to start.
+ * @param runner A function that returns a promise of an end state.
+ * @returns A promise that resolves to the started task.
+ */
 export function startRunner(
   task: Task,
   runner: TaskRunner<Promise<TaskRunnerReturn>>,
@@ -154,22 +189,16 @@ export function startRunner(
 ): Promise<Task> | Task {
   task.start();
   try {
-    const state = runner instanceof Promise
-      ? runner
-      : runner({ task, list: [...taskList] });
-    if (state instanceof Promise) {
-      return new Promise<Task>((resolve, reject) => {
-        Promise.resolve(state).then((state) => {
-          resolve(task.end(state ?? task.disposeState));
-        }).catch((e) => {
-          resolve(task.end(catchState(e, task.disposeState)));
-        });
-      });
-    } else {
-      task.end(state ?? task.disposeState);
+    if (runner instanceof Promise) {
+      return resolveEndState(runner, task);
     }
+    const state = runner({ task, list: [...taskList] });
+    if (state instanceof Promise) {
+      return resolveEndState(state, task);
+    }
+    task.end(state ?? task.disposeState);
   } catch (e) {
-    task.end(catchState(e, task.disposeState));
+    task.end(catchEndState(e, task.disposeState));
   }
   return task;
 }
@@ -179,17 +208,32 @@ export function startRunner(
  * @param logger - The logger to use for logging errors. The prefix used is the one set in the logger instance.
  * @param runner - The task runner or promise to wrap.
  * @param level - The log level to use for logging errors. Defaults to "error".
+ * @returns A wrapped task runner or promise that logs errors.
  */
 export function printErrors(
   logger: Logger,
   runner: TaskRunner<TaskRunnerReturn>,
   level?: LogLevel,
 ): TaskRunner<TaskRunnerReturn>;
+/**
+ * Wraps a task runner to log any exceptions using the provided logger.
+ * @param logger - The logger to use for logging errors. The prefix used is the one set in the logger instance.
+ * @param runner - The task runner or promise to wrap.
+ * @param level - The log level to use for logging errors. Defaults to "error".
+ * @returns A wrapped task runner or promise that logs errors.
+ */
 export function printErrors(
   logger: Logger,
   runner: Promise<TaskRunnerReturn>,
   level?: LogLevel,
 ): Promise<TaskRunnerReturn>;
+/**
+ * Wraps a task runner to log any exceptions using the provided logger.
+ * @param logger - The logger to use for logging errors. The prefix used is the one set in the logger instance.
+ * @param runner - The task runner or promise to wrap.
+ * @param level - The log level to use for logging errors. Defaults to "error".
+ * @returns A wrapped task runner or promise that logs errors.
+ */
 export function printErrors(
   logger: Logger,
   runner: TaskRunner<Promise<TaskRunnerReturn>>,
@@ -379,7 +423,19 @@ export class Task implements Disposable {
    * @returns The task instance for chaining.
    */
   startRunner(runner: TaskRunner<TaskRunnerReturn>): Task;
+  /**
+   * Runs the task with a given runner function.
+   * Refreshing will be continued until all tasks are in an end state.
+   * @param runner - A function that returns an end state.
+   * @returns The task instance for chaining.
+   */
   startRunner(runner: Promise<TaskRunnerReturn>): Promise<Task>;
+  /**
+   * Runs the task with a given runner function.
+   * Refreshing will be continued until all tasks are in an end state.
+   * @param runner - A function that returns an end state.
+   * @returns The task instance for chaining.
+   */
   startRunner(runner: TaskRunner<Promise<TaskRunnerReturn>>): Promise<Task>;
   startRunner(runner: AnyRunner): Promise<Task> | Task {
     return startRunner(this, runner as any);
