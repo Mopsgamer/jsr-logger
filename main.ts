@@ -73,7 +73,7 @@ export class Logger {
    * Prints a message to the console without a new line. Ends any ongoing continuous log as a success.
    * @param message - The message to print.
    */
-  print(message: string) {
+  print(message: string): void {
     if (this.#state === "started") {
       this.end("completed");
     }
@@ -85,7 +85,7 @@ export class Logger {
    * Same as {@link print}, but adds new line.
    * @param message - The message to print.
    */
-  println(message: string) {
+  println(message: string): void {
     this.print(message + "\n");
   }
 
@@ -93,7 +93,7 @@ export class Logger {
    * Same as {@link print}, but formats the given arguments.
    * @param args - The message and optional arguments to log.
    */
-  printf(...args: unknown[]) {
+  printf(...args: unknown[]): void {
     const message = this.format(...args);
     process.stdout.write(message);
   }
@@ -102,7 +102,7 @@ export class Logger {
    * Same as {@link printf}, but adds new line.
    * @param args - The message and optional arguments to log.
    */
-  printfln(...args: unknown[]) {
+  printfln(...args: unknown[]): void {
     const message = this.format(...args);
     process.stdout.write(message + "\n");
   }
@@ -111,7 +111,7 @@ export class Logger {
    * Logs an informational message.
    * @param args - The message and optional arguments to log.
    */
-  info(...args: unknown[]) {
+  info(...args: unknown[]): void {
     const prefix = blue("ⓘ " + this.prefix);
     this.println(`${prefix} ${this.format(...args)}`);
   }
@@ -120,7 +120,7 @@ export class Logger {
    * Logs an error message. Ends any ongoing continuous log as a failure.
    * @param args - The message and optional arguments to log.
    */
-  error(...args: unknown[]) {
+  error(...args: unknown[]): void {
     if (this.#state === "started") {
       this.end("failed");
     }
@@ -133,7 +133,7 @@ export class Logger {
    * Logs a warning message.
    * @param args - The message and optional arguments to log.
    */
-  warn(...args: unknown[]) {
+  warn(...args: unknown[]): void {
     const prefix = yellow("⚠ " + this.prefix);
     this.println(`${prefix} ${this.format(...args)}`);
   }
@@ -142,7 +142,7 @@ export class Logger {
    * Logs a success message.
    * @param args - The message and optional arguments to log.
    */
-  success(...args: unknown[]) {
+  success(...args: unknown[]): void {
     if (this.#state === "started") {
       this.end("completed");
     }
@@ -156,7 +156,7 @@ export class Logger {
    * Can be ended by the `end` and other log-methods such as `info` and `error`.
    * @param args - The message and optional arguments to log.
    */
-  start(...args: unknown[]) {
+  start(...args: unknown[]): void {
     this.startedArgs = args;
     const prefix = magenta("- " + this.prefix);
     this.print(`${prefix} ${this.format(...args)}...`);
@@ -168,7 +168,7 @@ export class Logger {
    * Ignored if the `start` method was not called.
    * @param stateEnd - The end state of the continuous log. Defaults to "completed".
    */
-  end(stateEnd?: LoggerStateEnd) {
+  end(stateEnd?: LoggerStateEnd): void {
     if (this.#state !== "started") return;
     stateEnd ??= "completed";
     this.#state = stateEnd;
@@ -194,5 +194,9 @@ export class Logger {
     const text = this.format(...this.startedArgs);
     const result = bold(color(message));
     this.printfln(`\r${prefix} ${text}...${result}`);
+  }
+
+  [Symbol.dispose]() {
+    this.end()
   }
 }
