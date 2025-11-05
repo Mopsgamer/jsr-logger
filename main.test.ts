@@ -44,7 +44,7 @@ function expectOutput(
 Deno.test("Logger.sprintLevel with no level returns uncolored prefix", () => {
   const logger = new Logger({ prefix: "TestApp" });
   const result = logger.sprintLevel("plain");
-  assertEquals(result, "[TestApp] plain");
+  assertEquals(result, "TestApp plain");
 });
 
 Deno.test("Logger.sprintTask", () => {
@@ -52,17 +52,17 @@ Deno.test("Logger.sprintTask", () => {
   const result = logger.sprintTask(format(undefined, "plain"));
   assertEquals(
     result.started,
-    magenta("- [TestApp]") + " " + brightBlack("undefined") + " " +
+    magenta("- TestApp") + " " + brightBlack("undefined") + " " +
       green("'plain'") + " ...",
   );
   assertEquals(
     result.skipped,
-    gray("✓ [TestApp]") + " " + brightBlack("undefined") + " " +
+    gray("✓ TestApp") + " " + brightBlack("undefined") + " " +
       green("'plain'") + " ... " + gray("skipped"),
   );
   assertEquals(
     result.completed,
-    green("✓ [TestApp]") + " " + brightBlack("undefined") + " " +
+    green("✓ TestApp") + " " + brightBlack("undefined") + " " +
       green("'plain'") + " ... " + bold(green("done")),
   );
 });
@@ -85,7 +85,7 @@ Deno.test(
 Deno.test("Logger.disabled keeps sprintLevel", () => {
   const logger = new Logger({ prefix: "TestApp", disabled: true });
   const result = logger.sprintLevel("plain");
-  assertEquals(result, "[TestApp] plain");
+  assertEquals(result, "TestApp plain");
 });
 
 Deno.test("format logs string arg right", () => {
@@ -115,7 +115,7 @@ Deno.test(
       const logger = new Logger({ prefix: "TestApp" });
       await logger.info("This is an informational message.");
     },
-    `${blue("ℹ [TestApp]")} This is an informational message.\n`,
+    `${blue("ℹ TestApp")} This is an informational message.\n`,
   ),
 );
 
@@ -126,7 +126,7 @@ Deno.test(
       const logger = new Logger({ prefix: "TestApp" });
       await logger.warn("This is a warning.");
     },
-    `${yellow("⚠ [TestApp]")} This is a warning.\n`,
+    `${yellow("⚠ TestApp")} This is a warning.\n`,
   ),
 );
 
@@ -137,7 +137,7 @@ Deno.test(
       const logger = new Logger({ prefix: "TestApp" });
       await logger.error("This is an error.");
     },
-    `${red("✗ [TestApp]")} This is an error.\n`,
+    `${red("✗ TestApp")} This is an error.\n`,
   ),
 );
 
@@ -148,7 +148,7 @@ Deno.test(
       const logger = new Logger({ prefix: "TestApp" });
       await logger.error("This is an error.");
     },
-    `${red("✗ [TestApp]")} This is an error.\n`,
+    `${red("✗ TestApp")} This is an error.\n`,
   ),
 );
 
@@ -159,7 +159,7 @@ Deno.test(
       const logger = new Logger({ prefix: "TestApp" });
       await logger.success("This is a success message.");
     },
-    `${green("✓ [TestApp]")} This is a success message.\n`,
+    `${green("✓ TestApp")} This is a success message.\n`,
   ),
 );
 
@@ -177,7 +177,7 @@ Deno.test("task.sprint", () => {
   const task = logger.task({ text: "Operating" }).start();
   assertEquals(
     task.sprint(),
-    magenta("- [TestApp]") + " Operating ...",
+    magenta("- TestApp") + " Operating ...",
   );
   task.disabled = true;
   assertEquals(task.sprint(), "");
@@ -190,15 +190,15 @@ Deno.test("Task.sprintList", async () => {
   assertEquals(list[0], task0);
   assertEquals(
     Task.sprintList(),
-    magenta("- [TestApp]") + " 0 ...\n",
+    magenta("- TestApp") + " 0 ...\n",
   );
   logger.task({ text: "1" }).start();
   logger.task({ text: "2" }).start();
   assertEquals(
     Task.sprintList(),
-    magenta("- [TestApp]") + " 0 ...\n" +
-      magenta("- [TestApp]") + " 1 ...\n" +
-      magenta("- [TestApp]") + " 2 ...\n",
+    magenta("- TestApp") + " 0 ...\n" +
+      magenta("- TestApp") + " 1 ...\n" +
+      magenta("- TestApp") + " 2 ...\n",
   );
 });
 

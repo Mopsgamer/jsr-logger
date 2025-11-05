@@ -44,15 +44,15 @@ using task = logger.task({
   disposeState: "completed",
 }).start();
 
-// Output: - [MyApp] Operating ...
+// Output: - MyApp Operating ...
 task.end("completed");
-// Output: ✓ [MyApp] Operating ... done
+// Output: ✓ MyApp Operating ... done
 task.end("skipped");
-// Output: ✓ [MyApp] Operating ... skipped
+// Output: ✓ MyApp Operating ... skipped
 task.end("failed");
-// Output: ✗ [MyApp] Operating ... failed
+// Output: ✗ MyApp Operating ... failed
 task.end("aborted");
-// Output: ⚠ [MyApp] Operating ... aborted
+// Output: ⚠ MyApp Operating ... aborted
 ```
 
 ### Task runner

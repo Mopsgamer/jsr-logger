@@ -280,7 +280,7 @@ export class Logger {
   public disabled: boolean;
 
   constructor(options: LoggerOptions) {
-    this.prefix = `[${options.prefix}]`;
+    this.prefix = options.prefix;
     this.disabled = options.disabled ?? false;
   }
 
