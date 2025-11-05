@@ -23,10 +23,6 @@ logger.println("Hello, World!");
 logger.printf("Hello, World! %o", true);
 logger.printfln("Hello, World! %o", true);
 
-// Get string
-const text = logger.sprintLevel("info", "This is an informational message.");
-ora(text).start();
-
 logger.info("This is an informational message.");
 logger.warn("This is a warning.");
 logger.error("This is an error.");
@@ -58,9 +54,9 @@ logger.println("done");
 // Output: Starting machine ... done
 ```
 
-### Continuous Logging with `start` and `end`
+### Continuous Logging with `start/end`
 
-For more control, use the `start` and `end` methods:
+For more control, use the `start/end` methods:
 
 ```ts
 import { Logger } from "@m234/logger";
