@@ -1,4 +1,4 @@
-import { makeBadge } from "badge-maker";
+import { makeBadge } from "npm:badge-maker";
 import { stripAnsiCode } from "@std/fmt/colors";
 import { existsSync } from "node:fs";
 
