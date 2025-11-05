@@ -197,6 +197,6 @@ export class Logger {
   }
 
   [Symbol.dispose]() {
-    this.end()
+    this.end();
   }
 }
