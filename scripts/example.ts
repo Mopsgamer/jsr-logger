@@ -11,14 +11,14 @@ logger.success("Success message.");
 logger.println("");
 
 logger.start("Action");
-await wait(1500)
+await wait(1500);
 logger.end("completed");
 logger.start("Action");
-await wait(1500)
+await wait(1500);
 logger.end("skipped");
 logger.start("Action");
-await wait(1500)
+await wait(1500);
 logger.end("aborted");
 logger.start("Action");
-await wait(1500)
+await wait(1500);
 logger.end("failed");

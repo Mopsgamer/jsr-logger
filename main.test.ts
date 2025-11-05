@@ -1,4 +1,13 @@
-import { blue, bold, gray, green, magenta, red, yellow } from "@std/fmt/colors";
+import {
+  blue,
+  bold,
+  brightBlack,
+  gray,
+  green,
+  magenta,
+  red,
+  yellow,
+} from "@std/fmt/colors";
 import { Logger } from "./main.ts";
 import { assertEquals } from "@std/assert";
 import process from "node:process";
@@ -29,6 +38,25 @@ Deno.test("Logger.sprintLevel with no level returns uncolored prefix", () => {
   using logger = new Logger("TestApp");
   const result = logger.sprintLevel(undefined, "plain");
   assertEquals(result, "[TestApp] plain");
+});
+
+Deno.test("Logger.sprintStart", () => {
+  using logger = new Logger("TestApp");
+  const result = logger.sprintStart(undefined, "plain");
+  assertEquals(
+    result,
+    magenta("- [TestApp]") + " " + brightBlack("undefined") + " " +
+      green("'plain'") + " ...",
+  );
+});
+
+Deno.test("Logger.sprintEnd", () => {
+  using logger = new Logger("TestApp");
+  const result = logger.sprintEnd(["test"], "skipped");
+  assertEquals(
+    result,
+    gray("✓ [TestApp]") + " test ... " + gray("skipped"),
+  );
 });
 
 Deno.test("Logger.disabled disables logging", () => {
@@ -103,8 +131,8 @@ Deno.test("Logger.error logs error messages", () => {
       logger.start("Never");
       logger.error("This is an error.");
     },
-    `${magenta("- [TestApp]")} Never ...`,
-    `\r${red("✗ [TestApp]")} Never ... ${bold(red("failed"))}\n`,
+    `${magenta("- [TestApp]")} Never ...\x1B[?25l`,
+    `\r${red("✗ [TestApp]")} Never ... ${bold(red("failed"))}\x1B[?25h\n`,
     `${red("✗ [TestApp]")} This is an error.\n`,
   );
 });
@@ -157,8 +185,8 @@ Deno.test("Logger.start is completed", () => {
       logger.end("completed");
       assertEquals(logger.state, "completed");
     },
-    `${magenta("- [TestApp]")} Operating ...`,
-    `\r${green("✓ [TestApp]")} Operating ... ${bold(green("done"))}\n`,
+    `${magenta("- [TestApp]")} Operating ...\x1B[?25l`,
+    `\r${green("✓ [TestApp]")} Operating ... ${bold(green("done"))}\x1B[?25h\n`,
   );
 });
 
@@ -170,8 +198,8 @@ Deno.test("Logger.start is failed", () => {
       logger.end("failed");
       assertEquals(logger.state, "failed");
     },
-    `${magenta("- [TestApp]")} Operating ...`,
-    `\r${red("✗ [TestApp]")} Operating ... ${bold(red("failed"))}\n`,
+    `${magenta("- [TestApp]")} Operating ...\x1B[?25l`,
+    `\r${red("✗ [TestApp]")} Operating ... ${bold(red("failed"))}\x1B[?25h\n`,
   );
 });
 
@@ -183,8 +211,10 @@ Deno.test("Logger.start is aborted", () => {
       logger.end("aborted");
       assertEquals(logger.state, "aborted");
     },
-    `${magenta("- [TestApp]")} Operating ...`,
-    `\r${yellow("⚠ [TestApp]")} Operating ... ${bold(yellow("aborted"))}\n`,
+    `${magenta("- [TestApp]")} Operating ...\x1B[?25l`,
+    `\r${yellow("⚠ [TestApp]")} Operating ... ${
+      bold(yellow("aborted"))
+    }\x1B[?25h\n`,
   );
 });
 
@@ -196,8 +226,8 @@ Deno.test("Logger.start is skipped", () => {
       logger.end("skipped");
       assertEquals(logger.state, "skipped");
     },
-    `${magenta("- [TestApp]")} Operating ...`,
-    `\r${gray("✓ [TestApp]")} Operating ... ${gray("skipped")}\n`,
+    `${magenta("- [TestApp]")} Operating ...\x1B[?25l`,
+    `\r${gray("✓ [TestApp]")} Operating ... ${gray("skipped")}\x1B[?25h\n`,
   );
 });
 
@@ -209,8 +239,8 @@ Deno.test("Logger.start is completed with Logger.success", () => {
       logger.success("Succ");
       assertEquals(logger.state, "completed");
     },
-    `${magenta("- [TestApp]")} Operating ...`,
-    `\r${green("✓ [TestApp]")} Operating ... ${bold(green("done"))}\n`,
+    `${magenta("- [TestApp]")} Operating ...\x1B[?25l`,
+    `\r${green("✓ [TestApp]")} Operating ... ${bold(green("done"))}\x1B[?25h\n`,
   );
 });
 
@@ -222,8 +252,8 @@ Deno.test("Logger.start is completed with Logger.info", () => {
       logger.info("test");
       assertEquals(logger.state, "completed");
     },
-    `${magenta("- [TestApp]")} Operating ...`,
-    `\r${green("✓ [TestApp]")} Operating ... ${bold(green("done"))}\n`,
+    `${magenta("- [TestApp]")} Operating ...\x1B[?25l`,
+    `\r${green("✓ [TestApp]")} Operating ... ${bold(green("done"))}\x1B[?25h\n`,
     `${blue("🛈 [TestApp]")} test\n`,
   );
 });
@@ -237,12 +267,18 @@ Deno.test("Logger second start ends previous if not ended", () => {
       logger.start("Operating 3");
       logger.end();
     },
-    `${magenta("- [TestApp]")} Operating 1 ...`,
-    `\r${green("✓ [TestApp]")} Operating 1 ... ${bold(green("done"))}\n`,
-    `${magenta("- [TestApp]")} Operating 2 ...`,
-    `\r${green("✓ [TestApp]")} Operating 2 ... ${bold(green("done"))}\n`,
-    `${magenta("- [TestApp]")} Operating 3 ...`,
-    `\r${green("✓ [TestApp]")} Operating 3 ... ${bold(green("done"))}\n`,
+    `${magenta("- [TestApp]")} Operating 1 ...\x1B[?25l`,
+    `\r${green("✓ [TestApp]")} Operating 1 ... ${
+      bold(green("done"))
+    }\x1B[?25h\n`,
+    `${magenta("- [TestApp]")} Operating 2 ...\x1B[?25l`,
+    `\r${green("✓ [TestApp]")} Operating 2 ... ${
+      bold(green("done"))
+    }\x1B[?25h\n`,
+    `${magenta("- [TestApp]")} Operating 3 ...\x1B[?25l`,
+    `\r${green("✓ [TestApp]")} Operating 3 ... ${
+      bold(green("done"))
+    }\x1B[?25h\n`,
   );
 });
 
@@ -256,8 +292,8 @@ Deno.test("Logger dispose works", () => {
       }
       assertEquals(logger.state, "completed");
     },
-    `${magenta("- [TestApp]")} Operating ...`,
-    `\r${green("✓ [TestApp]")} Operating ... ${bold(green("done"))}\n`,
+    `${magenta("- [TestApp]")} Operating ...\x1B[?25l`,
+    `\r${green("✓ [TestApp]")} Operating ... ${bold(green("done"))}\x1B[?25h\n`,
   );
   expectOutput(
     () => {
@@ -266,7 +302,7 @@ Deno.test("Logger dispose works", () => {
       using operation = logger;
       assertEquals(logger.state, "started");
     },
-    `${magenta("- [TestApp]")} Operating ...`,
-    `\r${green("✓ [TestApp]")} Operating ... ${bold(green("done"))}\n`,
+    `${magenta("- [TestApp]")} Operating ...\x1B[?25l`,
+    `\r${green("✓ [TestApp]")} Operating ... ${bold(green("done"))}\x1B[?25h\n`,
   );
 });
