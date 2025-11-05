@@ -3,7 +3,7 @@
 [![JSR](https://jsr.io/badges/@m234/logger)](https://jsr.io/@m234/logger)
 ![Tests](./assets/badge-tests.svg) ![Tests coverage](./assets/badge-cov.svg)
 
-A colorful logger with the ability to log messages such as "processing...done".
+A colorful logger with the ability to log "Processing ... done".
 
 ## Usage
 
@@ -14,11 +14,19 @@ import { Logger } from "@m234/logger";
 
 using logger = new Logger("MyApp");
 
+logger.print("Hello, World!");
+logger.println("Hello, World!");
+logger.printf("Hello, World! %o", true);
+logger.printfln("Hello, World! %o", true);
+
 logger.info("This is an informational message.");
 logger.warn("This is a warning.");
 logger.error("This is an error.");
 logger.success("This is a success message.");
 // Note: There are no 'log', 'debug', or 'verbose' methods.
+
+logger.start("Operating");
+logger.end();
 ```
 
 ### Logging with Formatting
