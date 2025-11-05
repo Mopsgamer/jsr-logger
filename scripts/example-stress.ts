@@ -1,5 +1,4 @@
 import { Logger, type Task } from "../main.ts";
-import { delay } from "@std/async";
 
 const logger = new Logger({ prefix: "@m234/logger" });
 const list: Task[] = [];
