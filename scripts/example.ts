@@ -19,8 +19,8 @@ let task2 = logger.task({ text: "Processing 2/3" }).start();
 setTimeout(() => task2.end("aborted"), 7000);
 
 let task3 = logger.task({ text: "Processing 3/3" }).start();
-let task31 = logger.task({ text: "Sub-task" }).start();
-let task311 = logger.task({ text: "Sub-sub-task" }).start();
+let task31 = logger.task({ text: "Sub-task", indent: 1 }).start();
+let task311 = logger.task({ text: "Sub-sub-task", indent: 2 }).start();
 setTimeout(() => task311.end("completed"), 200);
 setTimeout(() => task31.end("completed"), 200);
 setTimeout(() => {
@@ -28,4 +28,3 @@ setTimeout(() => {
 }, 4000);
 
 logger.task({ text: "Thinking" }).startRunner(() => "skipped");
-
