@@ -259,23 +259,42 @@ export class Task implements Disposable {
    * @param runner - A function that returns an end state.
    * @returns The task instance for chaining.
    */
-  async startRunner(
+  startRunner(runner: TaskRunner<TaskStateEnd>): Task;
+  startRunner(runner: TaskRunner<Promise<TaskStateEnd>>): Promise<Task>;
+  startRunner(runner: Promise<TaskStateEnd>): Promise<Task>;
+  startRunner(
     runner:
-      | TaskRunner<TaskStateEnd | Promise<TaskStateEnd>>
-      | Promise<TaskStateEnd>,
-  ): Promise<Task> {
+      | Promise<TaskStateEnd>
+      | TaskRunner<TaskStateEnd>
+      | TaskRunner<Promise<TaskStateEnd>>,
+  ): Promise<Task> | Task {
     this.state = "started";
+    function catchState(e: unknown): TaskStateEnd {
+      if (taskStateEnd.includes(e as TaskStateEnd)) {
+        return e as TaskStateEnd;
+      } else {
+        return "failed";
+      }
+    }
     try {
       const state = runner instanceof Promise
-        ? await runner
-        : await runner({ task: this, list: [...list] });
-      this.state = state;
-    } catch (e) {
-      if (taskStateEnd.includes(e as TaskStateEnd)) {
-        this.state = e as TaskStateEnd;
+        ? runner
+        : runner({ task: this, list: [...list] });
+      if (state instanceof Promise) {
+        return new Promise<Task>((resolve, reject) => {
+          Promise.resolve(state).then((state) => {
+            this.state = state;
+            resolve(this);
+          }).catch((e) => {
+            this.state = catchState(e);
+            resolve(this);
+          });
+        });
       } else {
-        this.state = "failed";
+        this.state = state;
       }
+    } catch (e) {
+      this.state = catchState(e);
     }
     return this;
   }
