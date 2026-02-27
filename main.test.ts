@@ -8,13 +8,7 @@ import {
   red,
   yellow,
 } from "@std/fmt/colors";
-import {
-  format,
-  Logger,
-  printErrors,
-  Task,
-  type TaskStateEnd,
-} from "./main.ts";
+import { format, Logger, Task, type TaskStateEnd } from "./main.ts";
 import {
   assert,
   assertEquals,
@@ -24,6 +18,7 @@ import {
 import { stripVTControlCharacters } from "node:util";
 import { mutex, state, taskList } from "./render.ts";
 import { patchOutput } from "./output-patcher.test.ts";
+import { delay } from "@std/async/delay";
 
 state.noLoop = true;
 
@@ -164,8 +159,8 @@ Deno.test("Task.duration exists", async () => {
 
 Deno.test("Task.disabled disables task logging", async () => {
   const { output, outputUnpatch } = patchOutput();
-  const logger = new Logger({ prefix: "TestApp" });
-  const task = logger.task({ text: "Operating", disabled: true }).start();
+  const logger = new Logger({ prefix: "TestApp", disabled: true });
+  const task = logger.task({ text: "Operating", logger }).start();
   await mutex.acquire();
   assertEquals(task.state, "started");
   assertEquals(output.length, 0);
@@ -184,7 +179,7 @@ Deno.test("task.sprint", () => {
     task.sprint(),
     magenta("- TestApp") + " Operating ...",
   );
-  task.disabled = true;
+  task.logger.disabled = true;
   assertEquals(task.sprint(), "");
 });
 
@@ -212,26 +207,29 @@ Deno.test("Task.sprintList empty", () => {
   assertEquals(Task.sprintList(), "");
 });
 
-Deno.test("printErrors", async () => {
+Deno.test("print errors", async () => {
   const { output, outputUnpatch } = patchOutput();
   taskList.length = 0;
   const logger = new Logger({ prefix: "TestApp" });
 
-  logger.task({ text: "1" }).startRunner(printErrors(logger, () => {
+  logger.task({ text: "1" }).startRunner(() => {
     throw new Error("test");
-  }));
+  });
   assert(output.some((out) => out.includes("Error: test")));
   output.length = 0;
   const p = new Promise<void>((_, reject) => {
     reject(new Error("test"));
   });
-  logger.task({ text: "2" }).startRunner(
-    printErrors(logger, p),
-  );
+  logger.task({ text: "2" }).startRunner(p);
   try {
     await p;
   } catch {
-    assert(output.some((out) => out.includes("Error: test")));
+    await delay(100);
+    const outHasError = output.some((out) => out.includes("Error: test"));
+    if (!outHasError) {
+      console.error(output);
+      assert(outHasError, "no error in the output: ");
+    }
   }
   outputUnpatch();
 });

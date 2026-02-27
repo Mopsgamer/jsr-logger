@@ -2,12 +2,12 @@
   "version": "5",
   "specifiers": {
     "jsr:@117/mutex@^1.0.8": "1.0.8",
-    "jsr:@m234/ns@1": "1.0.0",
+    "jsr:@m234/ns@^1.1.0": "1.1.0",
     "jsr:@std/assert@*": "1.0.14",
-    "jsr:@std/async@^1.0.15": "1.0.15",
-    "jsr:@std/fmt@^1.0.8": "1.0.8",
+    "jsr:@std/async@^1.2.0": "1.2.0",
+    "jsr:@std/fmt@^1.0.9": "1.0.9",
     "jsr:@std/internal@^1.0.10": "1.0.10",
-    "npm:@types/node@^24.10.0": "24.10.0",
+    "npm:@types/node@^24.10.15": "24.10.15",
     "npm:badge-maker@*": "5.0.2",
     "npm:is-interactive@2": "2.0.0",
     "npm:ora@*": "8.2.0",
@@ -17,8 +17,8 @@
     "@117/mutex@1.0.8": {
       "integrity": "8f14ef3e124ae427c92f93951fbe36b5cfad3aa74f84d443b2acf3034683255d"
     },
-    "@m234/ns@1.0.0": {
-      "integrity": "4e4db46b75c76182398a61d2dd19699eb5d0615691fe2e1bd29da524a20a125b"
+    "@m234/ns@1.1.0": {
+      "integrity": "1ef7448669614001f84fa637d3609c24f1d51a5844d6a96d34b479ceabe1c8a8"
     },
     "@std/assert@1.0.14": {
       "integrity": "68d0d4a43b365abc927f45a9b85c639ea18a9fab96ad92281e493e4ed84abaa4",
@@ -26,19 +26,19 @@
         "jsr:@std/internal"
       ]
     },
-    "@std/async@1.0.15": {
-      "integrity": "55d1d9d04f99403fe5730ab16bdcc3c47f658a6bf054cafb38a50f046238116e"
+    "@std/async@1.2.0": {
+      "integrity": "c059c6f6d95ca7cc012ae8e8d7164d1697113d54b0b679e4372b354b11c2dee5"
     },
-    "@std/fmt@1.0.8": {
-      "integrity": "71e1fc498787e4434d213647a6e43e794af4fd393ef8f52062246e06f7e372b7"
+    "@std/fmt@1.0.9": {
+      "integrity": "2487343e8899fb2be5d0e3d35013e54477ada198854e52dd05ed0422eddcabe0"
     },
     "@std/internal@1.0.10": {
       "integrity": "e3be62ce42cab0e177c27698e5d9800122f67b766a0bea6ca4867886cbde8cf7"
     }
   },
   "npm": {
-    "@types/node@24.10.0": {
-      "integrity": "sha512-qzQZRBqkFsYyaSWXuEHc2WR9c0a0CXwiE5FWUvn7ZM+vdy1uZLfCunD38UzhuB7YN/J11ndbDBcTmOdxJo9Q7A==",
+    "@types/node@24.10.15": {
+      "integrity": "sha512-BgjLoRuSr0MTI5wA6gMw9Xy0sFudAaUuvrnjgGx9wZ522fYYLA5SYJ+1Y30vTcJEG+DRCyDHx/gzQVfofYzSdg==",
       "dependencies": [
         "undici-types"
       ]
@@ -177,10 +177,10 @@
   "workspace": {
     "dependencies": [
       "jsr:@117/mutex@^1.0.8",
-      "jsr:@m234/ns@1",
-      "jsr:@std/async@^1.0.15",
-      "jsr:@std/fmt@^1.0.8",
-      "npm:@types/node@^24.10.0",
+      "jsr:@m234/ns@^1.1.0",
+      "jsr:@std/async@^1.2.0",
+      "jsr:@std/fmt@^1.0.9",
+      "npm:@types/node@^24.10.15",
       "npm:is-interactive@2",
       "npm:restore-cursor@^5.1.0"
     ]

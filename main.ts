@@ -131,7 +131,12 @@ export type AsyncRunner =
   | Promise<TaskStateEnd | void>
   | TaskRunner<Promise<TaskStateEnd | void>>;
 
-function catchEndState(e: unknown, disposeState: TaskStateEnd): TaskStateEnd {
+function catchEndState(
+  e: unknown,
+  disposeState: TaskStateEnd,
+  logger: Logger,
+): TaskStateEnd {
+  logger.error(format(e));
   if (e === undefined) {
     return disposeState;
   }
@@ -149,7 +154,7 @@ function resolveEndState(
     Promise.resolve(state).then((state) => {
       resolve(task.end(state ?? task.disposeState));
     }).catch((e) => {
-      resolve(task.end(catchEndState(e, task.disposeState)));
+      resolve(task.end(catchEndState(e, task.disposeState, task.logger)));
     });
   });
 }
@@ -199,63 +204,9 @@ export function startRunner(
     }
     task.end(state ?? task.disposeState);
   } catch (e) {
-    task.end(catchEndState(e, task.disposeState));
+    task.end(catchEndState(e, task.disposeState, task.logger));
   }
   return task;
-}
-
-/**
- * Wraps a task runner to log any exceptions using the provided logger.
- * @param logger - The logger to use for logging errors. The prefix used is the one set in the logger instance.
- * @param runner - The task runner or promise to wrap.
- * @param level - The log level to use for logging errors. Defaults to "error".
- * @returns A wrapped task runner or promise that logs errors.
- */
-export function printErrors(
-  logger: Logger,
-  runner: TaskRunner<TaskRunnerReturn>,
-  level?: LogLevel,
-): TaskRunner<TaskRunnerReturn>;
-/**
- * Wraps a task runner to log any exceptions using the provided logger.
- * @param logger - The logger to use for logging errors. The prefix used is the one set in the logger instance.
- * @param runner - The task runner or promise to wrap.
- * @param level - The log level to use for logging errors. Defaults to "error".
- * @returns A wrapped task runner or promise that logs errors.
- */
-export function printErrors(
-  logger: Logger,
-  runner: Promise<TaskRunnerReturn>,
-  level?: LogLevel,
-): Promise<TaskRunnerReturn>;
-/**
- * Wraps a task runner to log any exceptions using the provided logger.
- * @param logger - The logger to use for logging errors. The prefix used is the one set in the logger instance.
- * @param runner - The task runner or promise to wrap.
- * @param level - The log level to use for logging errors. Defaults to "error".
- * @returns A wrapped task runner or promise that logs errors.
- */
-export function printErrors(
-  logger: Logger,
-  runner: TaskRunner<Promise<TaskRunnerReturn>>,
-  level?: LogLevel,
-): TaskRunner<Promise<TaskRunnerReturn>>;
-export function printErrors(
-  logger: Logger,
-  runner: AnyRunner,
-  level: LogLevel = "error",
-): any {
-  return (async (options) => {
-    try {
-      if (runner instanceof Promise) {
-        return await runner;
-      }
-      return await runner(options);
-    } catch (e) {
-      logger[level](format(e));
-      throw e;
-    }
-  }) as TaskRunner<any>;
 }
 
 /**
@@ -281,12 +232,21 @@ export type LoggerOptions = {
    * @defult false
    */
   disabled?: boolean;
+  /**
+   * Default task options.
+   * @default undefined
+   */
+  defaultTaskOptions?: DefaultTaskOptions;
 };
 
 /**
  * Options for the Task class.
  */
-export type TaskOptions = LoggerOptions & {
+export type TaskOptions = {
+  /**
+   * Logger instance to log uncaught errors if any.
+   */
+  logger: Logger;
   /**
    * Task appearance text.
    */
@@ -313,12 +273,17 @@ export type TaskOptions = LoggerOptions & {
   suffixDuration?: boolean;
 };
 
+/**
+ * Default options for the {@link Logger.task} method.
+ */
+export type DefaultTaskOptions = Omit<SubtaskOptions, "text" | "logger">;
+
 type SetOptional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
 /**
  * Options for creating a subtask.
  */
-export type SubtaskOptions = SetOptional<TaskOptions, "prefix">;
+export type SubtaskOptions = SetOptional<TaskOptions, "logger">;
 
 /**
  * Sticky process state logger. Default state is "idle", which makes it invisible.
@@ -356,13 +321,13 @@ export class Task implements Disposable {
   };
 
   /**
+   * Logger instance to log uncaught errors if any.
+   */
+  logger: Logger;
+  /**
    * Indentation level.
    */
   indent: number;
-  /**
-   * Whether the task is disabled.
-   */
-  disabled: boolean;
   /**
    * The current state of the task.
    */
@@ -371,10 +336,6 @@ export class Task implements Disposable {
    * The state to set when the task is disposed.
    */
   disposeState: TaskStateEnd;
-  /**
-   * The prefix for the task.
-   */
-  prefix: string;
   /**
    * Task appearance text.
    */
@@ -394,12 +355,11 @@ export class Task implements Disposable {
 
   constructor(options: TaskOptions) {
     this.state = options.state ?? "idle";
-    this.prefix = options.prefix;
     this.text = options.text;
-    this.disabled = options.disabled ?? false;
     this.disposeState = options.disposeState ?? "completed";
     this.indent = Math.max(options.indent ?? 0);
     this.suffixDuration = options.suffixDuration ?? false;
+    this.logger = options.logger;
     taskList.push(this);
     // deno-coverage-ignore
     if (isInteractive()) renderer();
@@ -410,11 +370,12 @@ export class Task implements Disposable {
    * @returns A formatted string.
    */
   sprint(): string {
-    if (this.disabled) return "";
+    if (this.logger.disabled) return "";
     const isEnded = this.state !== "idle" && this.state !== "started";
     let duration = this.suffixDuration && isEnded ? Task.duration(this) : "";
     duration &&= " " + duration;
-    return Task.indent(this) + sprintTask(this.prefix, this.text)[this.state] +
+    return Task.indent(this) +
+      sprintTask(this.logger.prefix, this.text)[this.state] +
       duration;
   }
 
@@ -425,7 +386,7 @@ export class Task implements Disposable {
   start(): Task {
     this.state = "started";
     this.#duration = process.hrtime.bigint();
-    if (this.disabled) return this;
+    if (this.logger.disabled) return this;
     if (!isInteractive()) {
       process.stdout.write(this.sprint() + "\n");
     }
@@ -440,7 +401,7 @@ export class Task implements Disposable {
    */
   end(state: TaskStateEnd): Task {
     this.state = state;
-    if (this.disabled) return this;
+    if (this.logger.disabled) return this;
     if (!isInteractive()) {
       process.stdout.write(this.sprint() + "\n");
     }
@@ -495,7 +456,12 @@ export class Logger {
    * A string to prefix all logging methods, except {@link Logger.print} and {@link Logger.println}.
    * Affects {@link Logger.task}.
    */
-  private prefix: string;
+  public prefix: string;
+
+  /**
+   * Default task options.
+   */
+  defaultTaskOptions: DefaultTaskOptions;
 
   /**
    * Whether the logger is disabled.
@@ -507,6 +473,7 @@ export class Logger {
   constructor(options: LoggerOptions) {
     this.prefix = options.prefix;
     this.disabled = options.disabled ?? false;
+    this.defaultTaskOptions = options.defaultTaskOptions ?? {};
   }
 
   /**
@@ -602,9 +569,14 @@ export class Logger {
    */
   task(options: SubtaskOptions): Task {
     return new Task({
-      prefix: this.prefix,
-      disabled: this.disabled,
-      ...options,
+      logger: options.logger === undefined ? this : options.logger,
+      text: options.text,
+      disposeState: options.disposeState ??
+        this.defaultTaskOptions.disposeState,
+      indent: options.indent ?? this.defaultTaskOptions.indent,
+      state: options.state ?? this.defaultTaskOptions.state,
+      suffixDuration: options.suffixDuration ??
+        this.defaultTaskOptions.suffixDuration,
     });
   }
 }

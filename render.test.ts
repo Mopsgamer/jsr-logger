@@ -1,5 +1,5 @@
 import { assert, assertEquals, assertFalse } from "jsr:@std/assert";
-import { Task } from "./main.ts";
+import { Logger, Task } from "./main.ts";
 import {
   isPending,
   newLineCount,
@@ -14,13 +14,16 @@ import { assertArrayIncludes } from "jsr:@std/assert/array-includes";
 
 state.noLoop = true;
 
+const loggerTestApp = new Logger({ prefix: "TestApp" });
+const logger_ = new Logger({ prefix: "" });
+
 Deno.test("render", async () => {
   const { output, outputUnpatch } = patchOutput();
   render();
   assertEquals(output, []);
-  new Task({ prefix: "TestApp", text: "Operating" });
-  new Task({ prefix: "TestApp", text: "Operating" }).start();
-  new Task({ prefix: "TestApp", text: "Operating" }).start().end("failed");
+  new Task({ logger: loggerTestApp, text: "Operating" });
+  new Task({ logger: loggerTestApp, text: "Operating" }).start();
+  new Task({ logger: loggerTestApp, text: "Operating" }).start().end("failed");
   render();
   assertEquals(
     output.at(-1),
@@ -33,9 +36,9 @@ Deno.test("render", async () => {
 Deno.test("renderer", async () => {
   const { output, outputUnpatch } = patchOutput();
   const completed = renderer(true);
-  new Task({ prefix: "TestApp", text: "Operating" });
-  const keeper = new Task({ prefix: "TestApp", text: "Operating" }).start();
-  new Task({ prefix: "TestApp", text: "Operating" }).start().end("failed");
+  new Task({ logger: loggerTestApp, text: "Operating" });
+  const keeper = new Task({ logger: loggerTestApp, text: "Operating" }).start();
+  new Task({ logger: loggerTestApp, text: "Operating" }).start().end("failed");
   await completed;
   assertArrayIncludes(output, [
     magenta("- TestApp") + " Operating ...\n",
@@ -44,9 +47,9 @@ Deno.test("renderer", async () => {
   keeper.end("completed");
   output.length = 0;
   renderer();
-  new Task({ prefix: "TestApp", text: "Operating" });
-  new Task({ prefix: "TestApp", text: "Operating" }).start();
-  new Task({ prefix: "TestApp", text: "Operating" }).start().end("failed");
+  new Task({ logger: loggerTestApp, text: "Operating" });
+  new Task({ logger: loggerTestApp, text: "Operating" }).start();
+  new Task({ logger: loggerTestApp, text: "Operating" }).start().end("failed");
   assertArrayIncludes(output, [
     magenta("- TestApp") + " Operating ...\n",
     red("✗ TestApp") + " Operating ... " + bold(red("failed")) + "\n",
@@ -72,16 +75,16 @@ Deno.test("isPending", () => {
   taskList.length = 0;
   assertFalse(isPending());
 
-  new Task({ state: "idle", text: "", prefix: "" });
+  new Task({ state: "idle", text: "", logger: logger_ });
   assertFalse(isPending());
 
   taskList.length = 0;
-  new Task({ state: "idle", text: "", prefix: "" });
-  new Task({ state: "started", text: "", prefix: "" });
+  new Task({ state: "idle", text: "", logger: logger_ });
+  new Task({ state: "started", text: "", logger: logger_ });
   assert(isPending());
 
   taskList.length = 0;
-  new Task({ state: "idle", text: "", prefix: "" });
-  new Task({ state: "failed", text: "", prefix: "" });
+  new Task({ state: "idle", text: "", logger: logger_ });
+  new Task({ state: "failed", text: "", logger: logger_ });
   assertFalse(isPending());
 });
