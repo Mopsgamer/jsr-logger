@@ -151,7 +151,7 @@ Deno.test("Task.duration exists", async () => {
   );
   assertMatch(
     output[1],
-    /\x1b\[32m✓ TestApp\x1b\[39m Operating ... \x1b\[1m\x1b\[32mdone\x1b\[39m\x1b\[22m \w+\n/,
+    /\x1b\[32m✓ TestApp\x1b\[39m Operating ... \x1b\[1m\x1b\[32mdone\x1b\[39m\x1b\[22m [µ\w]+\n/,
   );
   mutex.release();
   outputUnpatch();

@@ -345,12 +345,20 @@ export class Task implements Disposable {
    */
   suffixDuration: boolean;
 
+  #start: bigint | undefined;
   #duration: bigint | undefined;
   /**
-   * The time when the task was started in nanoseconds.
+   * The total duration of the task in nanoseconds.
+   * If the task is still running, returns the time elapsed since it started.
    */
   get duration(): bigint | undefined {
-    return this.#duration;
+    if (this.#duration) {
+      return this.#duration;
+    }
+    if (!this.#start) {
+      return undefined;
+    }
+    return process.hrtime.bigint() - this.#start;
   }
 
   constructor(options: TaskOptions) {
@@ -385,7 +393,7 @@ export class Task implements Disposable {
    */
   start(): Task {
     this.state = "started";
-    this.#duration = process.hrtime.bigint();
+    this.#start = process.hrtime.bigint();
     if (this.logger.disabled) return this;
     if (!isInteractive()) {
       process.stdout.write(this.sprint() + "\n");
@@ -400,6 +408,7 @@ export class Task implements Disposable {
    * @return The task instance for chaining.
    */
   end(state: TaskStateEnd): Task {
+    this.#duration = this.#start ? process.hrtime.bigint() - this.#start : 0n;
     this.state = state;
     if (this.logger.disabled) return this;
     if (!isInteractive()) {
