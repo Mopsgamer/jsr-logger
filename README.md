@@ -64,7 +64,7 @@ task status based on the function's result:
 
 ```ts
 import { Logger } from "@m234/logger";
-import { delay } from "@std/async/delay";
+import { delay } from "jsr:@std/async/delay";
 
 const logger = new Logger({ prefix: "MyApp" });
 logger.task({

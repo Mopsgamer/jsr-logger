@@ -1,41 +1,42 @@
 import { assert, assertEquals, assertFalse } from "jsr:@std/assert";
 import { Logger, Task } from "./main.ts";
-import {
-  isPending,
-  newLineCount,
-  render,
-  renderer,
-  state,
-  taskList,
-} from "./render.ts";
+import { isPending, render, renderer, taskList } from "./render.ts";
 import { bold, magenta, red } from "@std/fmt/colors";
 import { patchOutput } from "./output-patcher.test.ts";
 import { assertArrayIncludes } from "jsr:@std/assert/array-includes";
 
-state.noLoop = true;
-
 const loggerTestApp = new Logger({ prefix: "TestApp" });
 const logger_ = new Logger({ prefix: "" });
+
+const makeVisible = (str: string) => {
+  if (typeof str !== "string") return str;
+  return str.replace(/[\x00-\x1F\x7F]/g, (match) => {
+    const hex = match.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0");
+    return `_0x${hex}_`;
+  });
+};
 
 Deno.test("render", async () => {
   const { output, outputUnpatch } = patchOutput();
   render();
-  assertEquals(output, []);
+  assertEquals(output, ["\n"]);
   new Task({ logger: loggerTestApp, text: "Operating" });
   new Task({ logger: loggerTestApp, text: "Operating" }).start();
   new Task({ logger: loggerTestApp, text: "Operating" }).start().end("failed");
   render();
   assertEquals(
-    output.at(-1),
-    magenta("- TestApp") + " Operating ...\n" +
-      red("✗ TestApp") + " Operating ... " + bold(red("failed")) + "\n",
+    makeVisible(output.at(-1)!),
+    makeVisible(
+      magenta("- TestApp") + " Operating ...\n" +
+        red("✗ TestApp") + " Operating ... " + bold(red("failed")) + "\n",
+    ),
   );
   outputUnpatch();
 });
 
 Deno.test("renderer", async () => {
   const { output, outputUnpatch } = patchOutput();
-  const completed = renderer(true);
+  const completed = renderer();
   new Task({ logger: loggerTestApp, text: "Operating" });
   const keeper = new Task({ logger: loggerTestApp, text: "Operating" }).start();
   new Task({ logger: loggerTestApp, text: "Operating" }).start().end("failed");
@@ -55,20 +56,6 @@ Deno.test("renderer", async () => {
     red("✗ TestApp") + " Operating ... " + bold(red("failed")) + "\n",
   ]);
   outputUnpatch();
-});
-
-Deno.test("newLineCount", () => {
-  const textLong = `✓ @m234/logger Processing 1/3 ... done
-⚠ @m234/logger Processing 2/3 ... aborted
-✗ @m234/logger Processing 3/3 ... failed
-  | ✓ @m234/logger Sub-task ... done
-  |   | ✓ @m234/logger Sub-sub-task log text aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ... done
-✓ @m234/logger Thinking ... skipped`;
-  assertEquals(newLineCount("", 120), 0);
-  assertEquals(newLineCount("\n", 120), 1);
-  assertEquals(newLineCount(textLong, 90), 6);
-  assertEquals(newLineCount(textLong, 110), 5);
-  assertEquals(newLineCount(textLong, 50), 6);
 });
 
 Deno.test("isPending", () => {

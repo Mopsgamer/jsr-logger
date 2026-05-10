@@ -288,13 +288,16 @@ export type SubtaskOptions = SetOptional<TaskOptions, "logger">;
 /**
  * Sticky process state logger. Default state is "idle", which makes it invisible.
  */
-export class Task implements Disposable {
+export class Task extends EventTarget implements Disposable {
+  public promise: Promise<TaskStateEnd>;
+  protected resolve: (value: TaskStateEnd) => void;
+  protected reject: (err: unknown) => void;
   /**
    * Formats a list of tasks.
    * @returns A formatted string that ends with a new line if there are any visible tasks.
    */
   static sprintList(): string {
-    const visibleTasks = taskList.filter((task) => task.state !== "idle");
+    const visibleTasks = taskList.filter((task) => task.#state !== "idle");
     let result = "";
     if (visibleTasks.length > 0) {
       for (const task of visibleTasks) {
@@ -328,10 +331,18 @@ export class Task implements Disposable {
    * Indentation level.
    */
   indent: number;
+  #state: TaskState;
   /**
    * The current state of the task.
+   * @event "statechange"
    */
-  state: TaskState;
+  get state() {
+    return this.#state;
+  }
+  set state(value: TaskState) {
+    this.#state = value;
+    this.dispatchEvent(new Event("statechange"));
+  }
   /**
    * The state to set when the task is disposed.
    */
@@ -362,12 +373,20 @@ export class Task implements Disposable {
   }
 
   constructor(options: TaskOptions) {
-    this.state = options.state ?? "idle";
+    super();
+    this.#state = options.state ?? "idle";
     this.text = options.text;
     this.disposeState = options.disposeState ?? "completed";
     this.indent = Math.max(options.indent ?? 0);
     this.suffixDuration = options.suffixDuration ?? false;
     this.logger = options.logger;
+
+    ({
+      promise: this.promise,
+      resolve: this.resolve,
+      reject: this.reject,
+    } = Promise.withResolvers<TaskStateEnd>());
+
     taskList.push(this);
     // deno-coverage-ignore
     if (isInteractive()) renderer();
@@ -379,11 +398,11 @@ export class Task implements Disposable {
    */
   sprint(): string {
     if (this.logger.disabled) return "";
-    const isEnded = this.state !== "idle" && this.state !== "started";
+    const isEnded = this.#state !== "idle" && this.#state !== "started";
     let duration = this.suffixDuration && isEnded ? Task.duration(this) : "";
     duration &&= " " + duration;
     return Task.indent(this) +
-      sprintTask(this.logger.prefix, this.text)[this.state] +
+      sprintTask(this.logger.prefix, this.text)[this.#state] +
       duration;
   }
 
@@ -409,7 +428,8 @@ export class Task implements Disposable {
    */
   end(state: TaskStateEnd): Task {
     this.#duration = this.#start ? process.hrtime.bigint() - this.#start : 0n;
-    this.state = state;
+    this.#state = state;
+    this.resolve(state);
     if (this.logger.disabled) return this;
     if (!isInteractive()) {
       process.stdout.write(this.sprint() + "\n");
@@ -443,7 +463,7 @@ export class Task implements Disposable {
   }
 
   [Symbol.dispose]() {
-    if (this.state === "started" || this.state === "idle") {
+    if (this.#state === "started" || this.#state === "idle") {
       this.end(this.disposeState);
     }
   }

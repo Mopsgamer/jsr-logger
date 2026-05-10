@@ -16,11 +16,9 @@ import {
   assertMatch,
 } from "jsr:@std/assert";
 import { stripVTControlCharacters } from "node:util";
-import { mutex, state, taskList } from "./render.ts";
+import { mutex, taskList } from "./render.ts";
 import { patchOutput } from "./output-patcher.test.ts";
-import { delay } from "@std/async/delay";
-
-state.noLoop = true;
+import { delay } from "jsr:@std/async/delay";
 
 Deno.test("Logger.sprintLevel with no level returns uncolored prefix", () => {
   const logger = new Logger({ prefix: "TestApp" });

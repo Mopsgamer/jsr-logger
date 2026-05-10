@@ -1,15 +1,16 @@
 import { Task } from "./main.ts";
+import { Semaphore } from "@std/async/unstable-semaphore";
 import { delay } from "@std/async/delay";
-import { createMutex, type Mutex } from "@117/mutex";
 import restoreCursor from "restore-cursor";
 import process from "node:process";
-import { stripVTControlCharacters } from "node:util";
+import { createLogUpdate } from "log-update";
 
 restoreCursor();
 
+export const logu = createLogUpdate(process.stdout, { showCursor: false });
+
 export const taskList: Task[] = [];
-export const mutex: Mutex = createMutex();
-let previousListString: string = "";
+export const mutex: Semaphore = new Semaphore(1);
 
 /**
  * Returns true if there are any tasks that are currently in the "started" state.
@@ -34,42 +35,52 @@ export function clearTasksExceptIdle(): void {
 
 export function render(): void {
   const listString = Task.sprintList();
-  const listStringNoVT = stripVTControlCharacters(listString);
-  const changed = listStringNoVT !== previousListString;
-  const newLines = newLineCount(previousListString, process.stdout.columns);
-  if (changed) {
-    if (newLines > 0) process.stdout.write("\x1B[" + newLines + "F\x1B[J");
-    process.stdout.write(listString);
-    previousListString = listStringNoVT;
-  }
+  logu(listString);
 }
 
-export let state = { noLoop: false };
+// const orig = console.log;
+// console.log = (function (...args: any[]) {
+//   const str = formatWithOptions({
+//     colors: true,
+//     depth: null,
+//     showHidden: false,
+//     showProxy: true,
+//   }, ...args);
+//   if (!isPending()) orig.call(console, ...args);
+//   logu.persist(str);
+// }).bind(console);
 
 // deno-coverage-ignore-start
-export async function renderer(force = false): Promise<void> {
-  if (state.noLoop && !force) return;
-  await mutex.acquire();
-  process.stdout.write("\x1B[?25l");
-  for (; !state.noLoop;) {
-    await delay(1000 / 60);
+export async function renderer(): Promise<void> {
+  const permit = mutex.tryAcquire();
+  if (!permit) return;
+  using _ = permit;
+  while (isPending()) {
+    const controller = new AbortController();
+    const stateChange = new Promise<void>((resolve) => {
+      const handler = () => {
+        resolve();
+        controller.abort();
+      };
+
+      for (const task of taskList) {
+        task.addEventListener("statechange", handler, {
+          once: true,
+          signal: controller.signal,
+        });
+      }
+    });
+
+    await Promise.race([
+      delay(1000 / 20),
+      stateChange,
+    ]);
+
+    controller.abort();
     render();
-    if (!isPending()) break;
   }
+
   render();
-  process.stdout.write("\x1B[?25h");
   clearTasksExceptIdle();
-  previousListString = "";
-  mutex.release();
 }
 // deno-coverage-ignore-stop
-
-export function newLineCount(text: string, width: number): number {
-  const lines = text.split("\n");
-  let result = -1;
-  for (const line of lines) {
-    result += Math.ceil(line.length / width) || 1;
-  }
-  result = Math.max(0, result);
-  return result;
-}
