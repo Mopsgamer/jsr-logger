@@ -5,10 +5,12 @@ import restoreCursor from "restore-cursor";
 import process from "node:process";
 import { createLogUpdate } from "log-update";
 import isInteractive from "is-interactive";
+import { hookState, setupHooks } from "./hook.ts";
 
 restoreCursor();
 
 export const logu = createLogUpdate(process.stdout, { showCursor: false });
+setupHooks();
 
 export const taskList: Task[] = [];
 export const mutex: Semaphore = new Semaphore(1);
@@ -24,11 +26,12 @@ export function isPending(): boolean {
 }
 
 /**
- * Clears all non-idle tasks from the task list.
+ * Clears all tasks that have reached an end state.
  */
 export function clearTasksExceptIdle(): void {
   for (let i = taskList.length - 1; i >= 0; i--) {
-    if (taskList[i].state !== "idle") {
+    const state = taskList[i].state;
+    if (state !== "idle" && state !== "started") {
       taskList.splice(i, 1);
     }
   }
@@ -36,32 +39,32 @@ export function clearTasksExceptIdle(): void {
 
 export function render(): void {
   const listString = Task.sprintList();
-  if (isInteractive()) logu(listString);
-  else {
-    console.log(listString);
+  if (isInteractive() || process.env.DEBUG) {
+    hookState.isHooking = true;
+    logu(listString);
+    hookState.isHooking = false;
+  } else {
+    // @ts-ignore
+    if (globalThis.__FORCE_RENDER__) {
+        process.stdout.write(listString);
+    }
+    // In non-interactive mode, Task.start() and Task.end() already print.
   }
 }
-
-// const orig = console.log;
-// console.log = (function (...args: any[]) {
-//   const str = formatWithOptions({
-//     colors: true,
-//     depth: null,
-//     showHidden: false,
-//     showProxy: true,
-//   }, ...args);
-//   if (!isPending()) orig.call(console, ...args);
-//   logu.persist(str);
-// }).bind(console);
 
 // deno-coverage-ignore-start
 export async function renderer(): Promise<void> {
   const permit = mutex.tryAcquire();
   if (!permit) return;
   using _ = permit;
-  while (isPending()) {
-    await delay(1000 / 20);
-    render();
+
+  if (isInteractive() || process.env.DEBUG) {
+    while (isPending()) {
+      // @ts-ignore
+      if (globalThis.__DISABLE_RENDERER_LOOP__) break;
+      await delay(1000 / 20);
+      render();
+    }
   }
 
   render();

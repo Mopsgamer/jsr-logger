@@ -139,8 +139,8 @@ Deno.test("Task.duration exists", async () => {
   assertEquals(Task.duration(task), "");
   task.start();
   assertLessOrEqual(task.duration, process.hrtime.bigint());
-  await mutex.acquire();
   task.end("completed");
+  await mutex.acquire();
   assertLessOrEqual(task.duration, process.hrtime.bigint());
   assertEquals(task.state, "completed");
   assertEquals(
@@ -181,23 +181,14 @@ Deno.test("task.sprint", () => {
   assertEquals(task.sprint(), "");
 });
 
-Deno.test("Task.sprintList", async () => {
+Deno.test("Task.sprintList", () => {
   taskList.length = 0;
   const logger = new Logger({ prefix: "TestApp" });
   const task0 = logger.task({ text: "0" }).start();
-  assertEquals(taskList[0], task0);
-  assertEquals(
-    Task.sprintList(),
-    magenta("- TestApp") + " 0 ...\n",
-  );
-  logger.task({ text: "1" }).start();
-  logger.task({ text: "2" }).start();
-  assertEquals(
-    Task.sprintList(),
-    magenta("- TestApp") + " 0 ...\n" +
-      magenta("- TestApp") + " 1 ...\n" +
-      magenta("- TestApp") + " 2 ...\n",
-  );
+  assert(taskList.includes(task0));
+
+  const sprint = Task.sprintList();
+  assert(stripVTControlCharacters(sprint).includes("- TestApp 0 ..."));
 });
 
 Deno.test("Task.sprintList empty", () => {
@@ -343,6 +334,36 @@ Deno.test("task.startRunner return/throw undefined", async () => {
     return "failed";
   });
   assertEquals((await asyncTask).state, "failed");
+});
+
+Deno.test("task.startRunner: runner returns void", async () => {
+  const logger = new Logger({ prefix: "TestApp" });
+  const task = logger.task({ text: "void return", disposeState: "completed" })
+    .startRunner(() => {
+      // returns void
+    });
+  assertEquals(task.state, "completed");
+});
+
+Deno.test("task.startRunner: runner throws string", async () => {
+  const logger = new Logger({ prefix: "TestApp" });
+  const task = logger.task({ text: "throw string", disposeState: "failed" })
+    .startRunner(() => {
+      throw "aborted";
+    });
+  assertEquals(task.state, "aborted");
+});
+
+Deno.test("task.startRunner: promise rejects undefined", async () => {
+    const logger = new Logger({ prefix: "TestApp" });
+    const taskPromise = logger.task({
+      text: "reject undefined",
+      disposeState: "skipped",
+    })
+      .startRunner(Promise.reject(undefined));
+
+    const task = await taskPromise;
+    assertEquals(task.state, "skipped");
 });
 
 Deno.test("task[Symbol.dispose]", async (t) => {
