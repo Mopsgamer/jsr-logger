@@ -31,7 +31,12 @@ export function setupHooks(force: boolean = false): void {
   ): boolean => {
     // @ts-ignore
     if (hookState.isHooking || !isPending() || globalThis.__DISABLE_HOOKS__) {
-      return originalStdoutWrite.call(process.stdout, chunk, encoding, callback);
+      return originalStdoutWrite.call(
+        process.stdout,
+        chunk,
+        encoding,
+        callback,
+      );
     }
     hookState.isHooking = true;
     try {
@@ -53,7 +58,12 @@ export function setupHooks(force: boolean = false): void {
   ): boolean => {
     // @ts-ignore
     if (hookState.isHooking || !isPending() || globalThis.__DISABLE_HOOKS__) {
-      return originalStderrWrite.call(process.stderr, chunk, encoding, callback);
+      return originalStderrWrite.call(
+        process.stderr,
+        chunk,
+        encoding,
+        callback,
+      );
     }
     hookState.isHooking = true;
     try {

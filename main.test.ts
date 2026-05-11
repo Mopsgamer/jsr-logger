@@ -355,15 +355,15 @@ Deno.test("task.startRunner: runner throws string", async () => {
 });
 
 Deno.test("task.startRunner: promise rejects undefined", async () => {
-    const logger = new Logger({ prefix: "TestApp" });
-    const taskPromise = logger.task({
-      text: "reject undefined",
-      disposeState: "skipped",
-    })
-      .startRunner(Promise.reject(undefined));
+  const logger = new Logger({ prefix: "TestApp" });
+  const taskPromise = logger.task({
+    text: "reject undefined",
+    disposeState: "skipped",
+  })
+    .startRunner(Promise.reject(undefined));
 
-    const task = await taskPromise;
-    assertEquals(task.state, "skipped");
+  const task = await taskPromise;
+  assertEquals(task.state, "skipped");
 });
 
 Deno.test("task[Symbol.dispose]", async (t) => {

@@ -46,7 +46,7 @@ export function render(): void {
   } else {
     // @ts-ignore
     if (globalThis.__FORCE_RENDER__) {
-        process.stdout.write(listString);
+      process.stdout.write(listString);
     }
     // In non-interactive mode, Task.start() and Task.end() already print.
   }
