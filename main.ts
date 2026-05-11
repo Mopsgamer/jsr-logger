@@ -336,7 +336,7 @@ export class Task extends EventTarget implements Disposable {
    * The current state of the task.
    * @event "statechange"
    */
-  get state() {
+  get state(): TaskState {
     return this.#state;
   }
   set state(value: TaskState) {
