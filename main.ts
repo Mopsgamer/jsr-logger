@@ -336,12 +336,13 @@ export class Task extends EventTarget implements Disposable {
    * The current state of the task.
    * @event "statechange"
    */
-  get state() {
+  get state(): TaskState {
     return this.#state;
   }
   set state(value: TaskState) {
     this.#state = value;
     this.dispatchEvent(new Event("statechange"));
+    renderer();
   }
   /**
    * The state to set when the task is disposed.
@@ -428,7 +429,7 @@ export class Task extends EventTarget implements Disposable {
    */
   end(state: TaskStateEnd): Task {
     this.#duration = this.#start ? process.hrtime.bigint() - this.#start : 0n;
-    this.#state = state;
+    this.state = state;
     this.resolve(state);
     if (this.logger.disabled) return this;
     if (!isInteractive()) {
@@ -462,7 +463,7 @@ export class Task extends EventTarget implements Disposable {
     return startRunner(this, runner as any);
   }
 
-  [Symbol.dispose]() {
+  [Symbol.dispose](): void {
     if (this.#state === "started" || this.#state === "idle") {
       this.end(this.disposeState);
     }

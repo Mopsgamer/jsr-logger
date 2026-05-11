@@ -4,6 +4,7 @@ import { delay } from "@std/async/delay";
 import restoreCursor from "restore-cursor";
 import process from "node:process";
 import { createLogUpdate } from "log-update";
+import isInteractive from "is-interactive";
 
 restoreCursor();
 
@@ -35,7 +36,10 @@ export function clearTasksExceptIdle(): void {
 
 export function render(): void {
   const listString = Task.sprintList();
-  logu(listString);
+  if (isInteractive()) logu(listString);
+  else {
+    console.log(listString);
+  }
 }
 
 // const orig = console.log;
@@ -56,27 +60,7 @@ export async function renderer(): Promise<void> {
   if (!permit) return;
   using _ = permit;
   while (isPending()) {
-    const controller = new AbortController();
-    const stateChange = new Promise<void>((resolve) => {
-      const handler = () => {
-        resolve();
-        controller.abort();
-      };
-
-      for (const task of taskList) {
-        task.addEventListener("statechange", handler, {
-          once: true,
-          signal: controller.signal,
-        });
-      }
-    });
-
-    await Promise.race([
-      delay(1000 / 20),
-      stateChange,
-    ]);
-
-    controller.abort();
+    await delay(1000 / 20);
     render();
   }
 
