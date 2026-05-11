@@ -51,36 +51,45 @@ export function render(): void {
 // }).bind(console);
 
 // deno-coverage-ignore-start
+let isRendering = false;
 export async function renderer(): Promise<void> {
-  const permit = mutex.tryAcquire();
-  if (!permit) return;
-  using _ = permit;
-  while (isPending()) {
-    const controller = new AbortController();
-    const stateChange = new Promise<void>((resolve) => {
-      const handler = () => {
-        resolve();
-        controller.abort();
-      };
+  if (isRendering) return;
+  isRendering = true;
+  try {
+    while (isPending()) {
+      const controller = new AbortController();
+      const stateChange = new Promise<void>((resolve) => {
+        const handler = () => {
+          resolve();
+          controller.abort();
+        };
 
-      for (const task of taskList) {
-        task.addEventListener("statechange", handler, {
-          once: true,
-          signal: controller.signal,
-        });
-      }
-    });
+        for (const task of taskList) {
+          task.addEventListener("statechange", handler, {
+            once: true,
+            signal: controller.signal,
+          });
+        }
+      });
 
-    await Promise.race([
-      delay(1000 / 20),
-      stateChange,
-    ]);
+      await Promise.race([
+        delay(1000 / 20),
+        stateChange,
+      ]);
 
-    controller.abort();
+      controller.abort();
+      await mutex.acquire();
+      render();
+      mutex.release();
+    }
+
+    await mutex.acquire();
     render();
+    logu.done();
+    clearTasksExceptIdle();
+    mutex.release();
+  } finally {
+    isRendering = false;
   }
-
-  render();
-  clearTasksExceptIdle();
 }
 // deno-coverage-ignore-stop

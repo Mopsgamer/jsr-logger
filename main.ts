@@ -10,7 +10,7 @@ import {
 } from "@std/fmt/colors";
 import process from "node:process";
 import { formatWithOptions } from "node:util";
-import { mutex, renderer, taskList } from "./render.ts";
+import { isPending, logu, mutex, render, renderer, taskList } from "./render.ts";
 import isInteractive from "is-interactive";
 import { ns } from "@m234/ns";
 
@@ -342,6 +342,7 @@ export class Task extends EventTarget implements Disposable {
   set state(value: TaskState) {
     this.#state = value;
     this.dispatchEvent(new Event("statechange"));
+    if (isInteractive()) renderer();
   }
   /**
    * The state to set when the task is disposed.
@@ -428,7 +429,7 @@ export class Task extends EventTarget implements Disposable {
    */
   end(state: TaskStateEnd): Task {
     this.#duration = this.#start ? process.hrtime.bigint() - this.#start : 0n;
-    this.#state = state;
+    this.state = state;
     this.resolve(state);
     if (this.logger.disabled) return this;
     if (!isInteractive()) {
@@ -518,7 +519,9 @@ export class Logger {
       // deno-coverage-ignore-start
     }
     await mutex.acquire();
+    logu.clear();
     process.stdout.write(message);
+    if (isPending()) render();
     mutex.release();
   }
   // deno-coverage-ignore-stop
