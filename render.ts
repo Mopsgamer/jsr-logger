@@ -1,4 +1,4 @@
-import { Task } from "./main.ts";
+import { LoggerOptions, Task, TaskOptions, DefaultTaskOptions, SubtaskOptions, format, sprintLevel, sprintTask, startRunner } from "./main.ts";
 import { Semaphore } from "@std/async/unstable-semaphore";
 import { delay } from "@std/async/delay";
 import restoreCursor from "restore-cursor";
@@ -46,7 +46,7 @@ export function render(): void {
   } else {
     // @ts-ignore
     if (globalThis.__FORCE_RENDER__) {
-      process.stdout.write(listString);
+        process.stdout.write(listString);
     }
     // In non-interactive mode, Task.start() and Task.end() already print.
   }

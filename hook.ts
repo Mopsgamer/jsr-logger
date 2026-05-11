@@ -1,6 +1,7 @@
 import process from "node:process";
 import { isPending, logu } from "./render.ts";
 import isInteractive from "is-interactive";
+import { format } from "./main.ts";
 
 /**
  * State for the hooking mechanism to prevent recursion.
@@ -20,7 +21,31 @@ export function setupHooks(force: boolean = false): void {
   // @ts-ignore: custom property
   globalThis.__LOGGER_HOOKS_SETUP__ = true;
 
-  if (!isInteractive() && !process.env.DEBUG && !force) return;
+  const check = () => isInteractive() || process.env.DEBUG || force;
+
+  const wrapConsole = (method: keyof Console) => {
+    const original = console[method];
+    if (typeof original !== "function") return;
+    // @ts-ignore
+    console[method] = (...args: any[]) => {
+      // @ts-ignore
+      if (hookState.isHooking || !isPending() || globalThis.__DISABLE_HOOKS__ || !check()) {
+        return (original as Function).apply(console, args);
+      }
+      hookState.isHooking = true;
+      try {
+        logu.persist(format(...args) + "\n");
+      } finally {
+        hookState.isHooking = false;
+      }
+    };
+  };
+
+  wrapConsole("log");
+  wrapConsole("info");
+  wrapConsole("warn");
+  wrapConsole("error");
+  wrapConsole("debug");
 
   const originalStdoutWrite = process.stdout.write;
   // @ts-ignore: matching signature
@@ -30,13 +55,8 @@ export function setupHooks(force: boolean = false): void {
     callback?: any,
   ): boolean => {
     // @ts-ignore
-    if (hookState.isHooking || !isPending() || globalThis.__DISABLE_HOOKS__) {
-      return originalStdoutWrite.call(
-        process.stdout,
-        chunk,
-        encoding,
-        callback,
-      );
+    if (hookState.isHooking || !isPending() || globalThis.__DISABLE_HOOKS__ || !check()) {
+      return originalStdoutWrite.call(process.stdout, chunk, encoding, callback);
     }
     hookState.isHooking = true;
     try {
@@ -57,13 +77,8 @@ export function setupHooks(force: boolean = false): void {
     callback?: any,
   ): boolean => {
     // @ts-ignore
-    if (hookState.isHooking || !isPending() || globalThis.__DISABLE_HOOKS__) {
-      return originalStderrWrite.call(
-        process.stderr,
-        chunk,
-        encoding,
-        callback,
-      );
+    if (hookState.isHooking || !isPending() || globalThis.__DISABLE_HOOKS__ || !check()) {
+      return originalStderrWrite.call(process.stderr, chunk, encoding, callback);
     }
     hookState.isHooking = true;
     try {
@@ -80,7 +95,7 @@ export function setupHooks(force: boolean = false): void {
     const originalDenoStdoutWrite = Deno.stdout.write;
     Deno.stdout.write = async (p: Uint8Array): Promise<number> => {
       // @ts-ignore
-      if (hookState.isHooking || !isPending() || globalThis.__DISABLE_HOOKS__) {
+      if (hookState.isHooking || !isPending() || globalThis.__DISABLE_HOOKS__ || !check()) {
         return await originalDenoStdoutWrite.call(Deno.stdout, p);
       }
       hookState.isHooking = true;
@@ -95,7 +110,7 @@ export function setupHooks(force: boolean = false): void {
     const originalDenoStdoutWriteSync = Deno.stdout.writeSync;
     Deno.stdout.writeSync = (p: Uint8Array): number => {
       // @ts-ignore
-      if (hookState.isHooking || !isPending() || globalThis.__DISABLE_HOOKS__) {
+      if (hookState.isHooking || !isPending() || globalThis.__DISABLE_HOOKS__ || !check()) {
         return originalDenoStdoutWriteSync.call(Deno.stdout, p);
       }
       hookState.isHooking = true;
@@ -110,7 +125,7 @@ export function setupHooks(force: boolean = false): void {
     const originalDenoStderrWrite = Deno.stderr.write;
     Deno.stderr.write = async (p: Uint8Array): Promise<number> => {
       // @ts-ignore
-      if (hookState.isHooking || !isPending() || globalThis.__DISABLE_HOOKS__) {
+      if (hookState.isHooking || !isPending() || globalThis.__DISABLE_HOOKS__ || !check()) {
         return await originalDenoStderrWrite.call(Deno.stderr, p);
       }
       hookState.isHooking = true;
@@ -125,7 +140,7 @@ export function setupHooks(force: boolean = false): void {
     const originalDenoStderrWriteSync = Deno.stderr.writeSync;
     Deno.stderr.writeSync = (p: Uint8Array): number => {
       // @ts-ignore
-      if (hookState.isHooking || !isPending() || globalThis.__DISABLE_HOOKS__) {
+      if (hookState.isHooking || !isPending() || globalThis.__DISABLE_HOOKS__ || !check()) {
         return originalDenoStderrWriteSync.call(Deno.stderr, p);
       }
       hookState.isHooking = true;
