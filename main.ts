@@ -10,7 +10,14 @@ import {
 } from "@std/fmt/colors";
 import process from "node:process";
 import { formatWithOptions } from "node:util";
-import { isPending, logu, mutex, render, renderer, taskList } from "./render.ts";
+import {
+  isPending,
+  logu,
+  mutex,
+  render,
+  renderer,
+  taskList,
+} from "./render.ts";
 import isInteractive from "is-interactive";
 import { ns } from "@m234/ns";
 
