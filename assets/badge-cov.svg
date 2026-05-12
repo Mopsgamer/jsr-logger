@@ -3,9 +3,9 @@
   width="108"
   height="20"
   role="img"
-  aria-label="coverage: 75.8%"
+  aria-label="coverage: 73.3%"
 >
-  <title>coverage: 75.8%</title>
+  <title>coverage: 73.3%</title>
   <linearGradient id="s" x2="0" y2="100%">
     <stop offset="0" stop-color="#bbb" stop-opacity=".1" />
     <stop offset="1" stop-opacity=".1" />
@@ -15,7 +15,7 @@
   </clipPath>
   <g clip-path="url(#r)">
     <rect width="61" height="20" fill="#555" />
-    <rect x="61" width="47" height="20" fill="rgb(106,220,0)" />
+    <rect x="61" width="47" height="20" fill="rgb(117,220,0)" />
     <rect width="108" height="20" fill="url(#s)" />
   </g>
   <g
@@ -49,13 +49,13 @@
       fill-opacity=".3"
       transform="scale(.1)"
       textLength="370"
-    >75.8%</text>
+    >73.3%</text>
     <text
       x="835"
       y="140"
       transform="scale(.1)"
       fill="#fff"
       textLength="370"
-    >75.8%</text>
+    >73.3%</text>
   </g>
 </svg>

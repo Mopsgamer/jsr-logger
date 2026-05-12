@@ -1,5 +1,7 @@
 # @m234/logger
 
+<div align="center">
+
 [![JSR](https://jsr.io/badges/@m234/logger)](https://jsr.io/@m234/logger)
 ![Tests](https://raw.githubusercontent.com/Mopsgamer/jsr-logger/refs/heads/main/assets/badge-tests.svg)
 ![Tests coverage](https://raw.githubusercontent.com/Mopsgamer/jsr-logger/refs/heads/main/assets/badge-cov.svg)
@@ -7,6 +9,8 @@
 A colorful logger with the ability to log "Processing ... done".
 
 <img src="https://raw.githubusercontent.com/Mopsgamer/jsr-logger/refs/heads/main/assets/preview.png" height="140">
+
+</div>
 
 ## Features
 
