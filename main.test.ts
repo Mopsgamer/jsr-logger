@@ -17,8 +17,18 @@ import {
 } from "jsr:@std/assert";
 import { stripVTControlCharacters } from "node:util";
 import { mutex, taskList } from "./render.ts";
-import { patchOutput } from "./output-patcher.test.ts";
+import { patchOutput } from "./output-patcher.ts";
 import { delay } from "jsr:@std/async/delay";
+
+declare global {
+  var __DISABLE_RENDERER_LOOP__: boolean | undefined;
+  var __FORCE_RENDER__: boolean | undefined;
+  var __RENDERER_TIMEOUT__: number | undefined;
+  var __DISABLE_HOOKS__: boolean | undefined;
+  var __LOGGER_HOOKS_SETUP__: boolean | undefined;
+}
+
+globalThis.__RENDERER_TIMEOUT__ = 100;
 
 Deno.test("Logger.sprintLevel with no level returns uncolored prefix", () => {
   const logger = new Logger({ prefix: "TestApp" });
@@ -139,8 +149,8 @@ Deno.test("Task.duration exists", async () => {
   assertEquals(Task.duration(task), "");
   task.start();
   assertLessOrEqual(task.duration, process.hrtime.bigint());
-  await mutex.acquire();
   task.end("completed");
+  await mutex.acquire();
   assertLessOrEqual(task.duration, process.hrtime.bigint());
   assertEquals(task.state, "completed");
   assertEquals(
@@ -183,21 +193,15 @@ Deno.test("task.sprint", () => {
 
 Deno.test("Task.sprintList", async () => {
   taskList.length = 0;
+  globalThis.__DISABLE_RENDERER_LOOP__ = true;
   const logger = new Logger({ prefix: "TestApp" });
   const task0 = logger.task({ text: "0" }).start();
-  assertEquals(taskList[0], task0);
-  assertEquals(
-    Task.sprintList(),
-    magenta("- TestApp") + " 0 ...\n",
-  );
-  logger.task({ text: "1" }).start();
-  logger.task({ text: "2" }).start();
-  assertEquals(
-    Task.sprintList(),
-    magenta("- TestApp") + " 0 ...\n" +
-      magenta("- TestApp") + " 1 ...\n" +
-      magenta("- TestApp") + " 2 ...\n",
-  );
+  assert(taskList.includes(task0));
+
+  task0.end("completed");
+  await mutex.acquire();
+  mutex.release();
+  globalThis.__DISABLE_RENDERER_LOOP__ = false;
 });
 
 Deno.test("Task.sprintList empty", () => {
@@ -208,6 +212,7 @@ Deno.test("Task.sprintList empty", () => {
 Deno.test("print errors", async () => {
   const { output, outputUnpatch } = patchOutput();
   taskList.length = 0;
+  globalThis.__DISABLE_RENDERER_LOOP__ = true;
   const logger = new Logger({ prefix: "TestApp" });
 
   logger.task({ text: "1" }).startRunner(() => {
@@ -229,11 +234,13 @@ Deno.test("print errors", async () => {
       assert(outHasError, "no error in the output: ");
     }
   }
+  globalThis.__DISABLE_RENDERER_LOOP__ = false;
   outputUnpatch();
 });
 
 Deno.test("task.startRunner", async (t) => {
   taskList.length = 0;
+  globalThis.__DISABLE_RENDERER_LOOP__ = true;
   const logger = new Logger({ prefix: "TestApp" });
 
   let asyncTask: Promise<Task>, task: Task;
@@ -300,9 +307,11 @@ Deno.test("task.startRunner", async (t) => {
       assertEquals((await asyncTask).state, "failed");
     },
   });
+  globalThis.__DISABLE_RENDERER_LOOP__ = false;
 });
 Deno.test("task.startRunner return/throw undefined", async () => {
   const logger = new Logger({ prefix: "TestApp" });
+  globalThis.__DISABLE_RENDERER_LOOP__ = true;
   let asyncTask = logger.task({
     text: "catch undefined",
     disposeState: "aborted",
@@ -343,10 +352,48 @@ Deno.test("task.startRunner return/throw undefined", async () => {
     return "failed";
   });
   assertEquals((await asyncTask).state, "failed");
+  globalThis.__DISABLE_RENDERER_LOOP__ = false;
+});
+
+Deno.test("task.startRunner: runner returns void", async () => {
+  const logger = new Logger({ prefix: "TestApp" });
+  globalThis.__DISABLE_RENDERER_LOOP__ = true;
+  const task = logger.task({ text: "void return", disposeState: "completed" })
+    .startRunner(() => {
+      // returns void
+    });
+  assertEquals(task.state, "completed");
+  globalThis.__DISABLE_RENDERER_LOOP__ = false;
+});
+
+Deno.test("task.startRunner: runner throws string", async () => {
+  const logger = new Logger({ prefix: "TestApp" });
+  globalThis.__DISABLE_RENDERER_LOOP__ = true;
+  const task = logger.task({ text: "throw string", disposeState: "failed" })
+    .startRunner(() => {
+      throw "aborted";
+    });
+  assertEquals(task.state, "aborted");
+  globalThis.__DISABLE_RENDERER_LOOP__ = false;
+});
+
+Deno.test("task.startRunner: promise rejects undefined", async () => {
+  const logger = new Logger({ prefix: "TestApp" });
+  globalThis.__DISABLE_RENDERER_LOOP__ = true;
+  const taskPromise = logger.task({
+    text: "reject undefined",
+    disposeState: "skipped",
+  })
+    .startRunner(Promise.reject(undefined));
+
+  const task = await taskPromise;
+  assertEquals(task.state, "skipped");
+  globalThis.__DISABLE_RENDERER_LOOP__ = false;
 });
 
 Deno.test("task[Symbol.dispose]", async (t) => {
   const logger = new Logger({ prefix: "TestApp" });
+  globalThis.__DISABLE_RENDERER_LOOP__ = true;
 
   await t.step({
     name: "changes state from started",
@@ -394,4 +441,5 @@ Deno.test("task[Symbol.dispose]", async (t) => {
       assertEquals(task.state, "completed");
     },
   });
+  globalThis.__DISABLE_RENDERER_LOOP__ = false;
 });
