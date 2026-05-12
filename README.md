@@ -141,4 +141,4 @@ interactive task display remains at the bottom of the terminal.
   succession, randomly changing their states to simulate heavy usage and
   concurrent task updates.
 - [scripts/example-persists.ts](https://github.com/Mopsgamer/jsr-logger/blob/main/scripts/example-persists.ts):
-  Uses `console.log`, `stdout.write` while threre are spinning tasks.
+  Uses `console.log` and `stdout.write` while there are spinning tasks.
