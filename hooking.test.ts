@@ -1,16 +1,10 @@
 import { Logger } from "./main.ts";
-import { assert, type assertEquals } from "jsr:@std/assert";
+import { assert } from "jsr:@std/assert";
 import { patchOutput } from "./output-patcher.ts";
-import { mutex, taskList } from "./render.ts";
+import { mutex, renderingState, taskList } from "./render.ts";
 import process from "node:process";
 
-declare global {
-  var __DISABLE_HOOKS__: boolean | undefined;
-  var __LOGGER_HOOKS_SETUP__: boolean | undefined;
-  var __RENDERER_TIMEOUT__: number | undefined;
-}
-
-globalThis.__RENDERER_TIMEOUT__ = 100;
+renderingState.__RENDERER_TIMEOUT__ = 100;
 
 Deno.test("hooking: console.log during task", async () => {
   const originalEnv = process.env.DEBUG;

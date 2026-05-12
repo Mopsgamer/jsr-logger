@@ -6,11 +6,19 @@ import { createLogUpdate } from "log-update";
 import isInteractive from "is-interactive";
 import { hookState, setupHooks } from "./hook.ts";
 
-declare global {
-  var __FORCE_RENDER__: boolean | undefined;
-  var __RENDERER_TIMEOUT__: number | undefined;
-  var __DISABLE_RENDERER_LOOP__: boolean | undefined;
+/**
+ * State for the rendering mechanism.
+ */
+export interface RenderState {
+  __FORCE_RENDER__?: boolean;
+  __RENDERER_TIMEOUT__?: number;
+  __DISABLE_RENDERER_LOOP__?: boolean;
 }
+
+/**
+ * State for the rendering mechanism to prevent recursion.
+ */
+export const renderingState: RenderState = {};
 
 function show(): void {
   process.stderr.write("\x1B[?25h");
@@ -86,7 +94,7 @@ export function render(): void {
     logu(listString);
     hookState.isHooking = false;
   } else {
-    if (globalThis.__FORCE_RENDER__) {
+    if (renderingState.__FORCE_RENDER__) {
       process.stdout.write(listString);
     }
     // In non-interactive mode, Task.start() and Task.end() already print.
@@ -103,7 +111,7 @@ export async function renderer(): Promise<void> {
   if (!permit) return;
   using _ = permit;
 
-  const timeout = globalThis.__RENDERER_TIMEOUT__ ?? 2000;
+  const timeout = renderingState.__RENDERER_TIMEOUT__ ?? 2000;
 
   try {
     if (isInteractive() || process.env.DEBUG) {
@@ -116,7 +124,7 @@ export async function renderer(): Promise<void> {
           break;
         }
 
-        if (globalThis.__DISABLE_RENDERER_LOOP__) break;
+        if (renderingState.__DISABLE_RENDERER_LOOP__) break;
 
         await delay(1000 / 20);
         render();

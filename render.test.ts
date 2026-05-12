@@ -1,17 +1,7 @@
-import { assert, type assertEquals, assertFalse } from "jsr:@std/assert";
+import { assert, assertFalse } from "jsr:@std/assert";
 import { Logger, Task } from "./main.ts";
 import { isPending, mutex, render, type renderer, taskList } from "./render.ts";
-import type { bold, magenta, red } from "@std/fmt/colors";
 import { patchOutput } from "./output-patcher.ts";
-import type { assertArrayIncludes } from "jsr:@std/assert/array-includes";
-
-declare global {
-  var __FORCE_RENDER__: boolean | undefined;
-  var __DISABLE_RENDERER_LOOP__: boolean | undefined;
-  var __RENDERER_TIMEOUT__: number | undefined;
-}
-
-globalThis.__RENDERER_TIMEOUT__ = 100;
 
 const loggerTestApp = new Logger({ prefix: "TestApp" });
 const logger_ = new Logger({ prefix: "" });

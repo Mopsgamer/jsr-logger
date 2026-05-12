@@ -3,11 +3,6 @@ import { isPending, logu } from "./render.ts";
 import isInteractive from "is-interactive";
 import { format } from "./main.ts";
 
-declare global {
-  var __DISABLE_HOOKS__: boolean | undefined;
-  var __LOGGER_HOOKS_SETUP__: boolean | undefined;
-}
-
 /**
  * State for the hooking mechanism.
  */
@@ -16,6 +11,8 @@ export interface HookState {
    * Whether the library is currently hooking output.
    */
   isHooking: boolean;
+  __DISABLE_HOOKS__?: boolean;
+  __LOGGER_HOOKS_SETUP__?: boolean;
 }
 
 /**
@@ -30,9 +27,8 @@ export const hookState: HookState = {
  * using log-update when tasks are pending.
  */
 export function setupHooks(force: boolean = false): void {
-  // Use a property on globalThis to ensure we only setup once
-  if (globalThis.__LOGGER_HOOKS_SETUP__ && !force) return;
-  globalThis.__LOGGER_HOOKS_SETUP__ = true;
+  if (hookState.__LOGGER_HOOKS_SETUP__ && !force) return;
+  hookState.__LOGGER_HOOKS_SETUP__ = true;
 
   const check = () => isInteractive() || process.env.DEBUG || force;
 
@@ -41,7 +37,7 @@ export function setupHooks(force: boolean = false): void {
     if (typeof original !== "function") return;
     console[method] = (...args: any[]) => {
       if (
-        hookState.isHooking || !isPending() || globalThis.__DISABLE_HOOKS__ ||
+        hookState.isHooking || !isPending() || hookState.__DISABLE_HOOKS__ ||
         !check()
       ) {
         return (original as Function).apply(console, args);
@@ -68,7 +64,7 @@ export function setupHooks(force: boolean = false): void {
     callback?: any,
   ): boolean => {
     if (
-      hookState.isHooking || !isPending() || globalThis.__DISABLE_HOOKS__ ||
+      hookState.isHooking || !isPending() || hookState.__DISABLE_HOOKS__ ||
       !check()
     ) {
       return originalStdoutWrite.call(
@@ -96,7 +92,7 @@ export function setupHooks(force: boolean = false): void {
     callback?: any,
   ): boolean => {
     if (
-      hookState.isHooking || !isPending() || globalThis.__DISABLE_HOOKS__ ||
+      hookState.isHooking || !isPending() || hookState.__DISABLE_HOOKS__ ||
       !check()
     ) {
       return originalStderrWrite.call(
@@ -121,7 +117,7 @@ export function setupHooks(force: boolean = false): void {
     const originalDenoStdoutWrite = Deno.stdout.write;
     Deno.stdout.write = async (p: Uint8Array): Promise<number> => {
       if (
-        hookState.isHooking || !isPending() || globalThis.__DISABLE_HOOKS__ ||
+        hookState.isHooking || !isPending() || hookState.__DISABLE_HOOKS__ ||
         !check()
       ) {
         return await originalDenoStdoutWrite.call(Deno.stdout, p);
@@ -138,7 +134,7 @@ export function setupHooks(force: boolean = false): void {
     const originalDenoStdoutWriteSync = Deno.stdout.writeSync;
     Deno.stdout.writeSync = (p: Uint8Array): number => {
       if (
-        hookState.isHooking || !isPending() || globalThis.__DISABLE_HOOKS__ ||
+        hookState.isHooking || !isPending() || hookState.__DISABLE_HOOKS__ ||
         !check()
       ) {
         return originalDenoStdoutWriteSync.call(Deno.stdout, p);
@@ -155,7 +151,7 @@ export function setupHooks(force: boolean = false): void {
     const originalDenoStderrWrite = Deno.stderr.write;
     Deno.stderr.write = async (p: Uint8Array): Promise<number> => {
       if (
-        hookState.isHooking || !isPending() || globalThis.__DISABLE_HOOKS__ ||
+        hookState.isHooking || !isPending() || hookState.__DISABLE_HOOKS__ ||
         !check()
       ) {
         return await originalDenoStderrWrite.call(Deno.stderr, p);
@@ -172,7 +168,7 @@ export function setupHooks(force: boolean = false): void {
     const originalDenoStderrWriteSync = Deno.stderr.writeSync;
     Deno.stderr.writeSync = (p: Uint8Array): number => {
       if (
-        hookState.isHooking || !isPending() || globalThis.__DISABLE_HOOKS__ ||
+        hookState.isHooking || !isPending() || hookState.__DISABLE_HOOKS__ ||
         !check()
       ) {
         return originalDenoStderrWriteSync.call(Deno.stderr, p);
