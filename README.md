@@ -140,3 +140,5 @@ interactive task display remains at the bottom of the terminal.
   Runs a stress test by creating and updating the state of 20 tasks in rapid
   succession, randomly changing their states to simulate heavy usage and
   concurrent task updates.
+- [scripts/example-persists.ts](https://github.com/Mopsgamer/jsr-logger/blob/main/scripts/example-persists.ts):
+  Uses `console.log`, `stdout.write` while threre are spinning tasks.
