@@ -7,7 +7,7 @@
       "command": "deno publish",
       "dependencies": ["prepare"]
     },
-    "prepare": "deno check && deno test --coverage && deno lint && deno task badge:tests && deno fmt",
+    "prepare": "deno check && deno test -A --coverage=coverage && deno lint && deno task badge:tests && deno fmt",
     "badge:tests": "deno run -A scripts/badge-tests.ts"
   },
   "lint": {

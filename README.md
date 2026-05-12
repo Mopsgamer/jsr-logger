@@ -8,6 +8,17 @@ A colorful logger with the ability to log "Processing ... done".
 
 <img src="https://raw.githubusercontent.com/Mopsgamer/jsr-logger/refs/heads/main/assets/preview.png" height="140">
 
+## Features
+
+- **Interactive Task Tracking:** Display ongoing tasks with spinners and status
+  indicators.
+- **Automatic Console Hooking:** Intercepts `console.log` and other output to
+  prevent them from breaking the task display.
+- **Cross-Platform:** Works seamlessly in both Deno and Node.js.
+- **Indented Subtasks:** Organize complex operations with hierarchical task
+  structures.
+- **Customizable:** Configure prefixes, colors, and duration displays.
+
 ## Usage
 
 ### Simple printing
@@ -74,6 +85,46 @@ logger.task({
   return "completed";
 });
 ```
+
+### Subtasks
+
+You can create hierarchical tasks using the `indent` option:
+
+```ts
+const parent = logger.task({ text: "Main operation" }).start();
+const subtask = logger.task({ text: "Sub-operation", indent: 1 }).start();
+
+await delay(500);
+subtask.end("completed");
+parent.end("completed");
+```
+
+### Automatic Console Hooking
+
+When tasks are active, the library automatically hooks into `console.log`,
+`process.stdout.write`, and Deno's output streams. Any output sent through these
+methods will be "persisted" above the active tasks, ensuring that the
+interactive task display remains at the bottom of the terminal.
+
+## API Reference
+
+### `LoggerOptions`
+
+| Option               | Type                 | Default | Description                                           |
+| :------------------- | :------------------- | :------ | :---------------------------------------------------- |
+| `prefix`             | `string`             | -       | A string to prefix all logging methods.               |
+| `disabled`           | `boolean`            | `false` | Whether logging is disabled.                          |
+| `defaultTaskOptions` | `DefaultTaskOptions` | -       | Default options for all tasks created by this logger. |
+
+### `TaskOptions`
+
+| Option           | Type           | Default       | Description                                   |
+| :--------------- | :------------- | :------------ | :-------------------------------------------- |
+| `text`           | `string`       | -             | The text to display for the task.             |
+| `state`          | `TaskState`    | `"idle"`      | Initial state of the task.                    |
+| `disposeState`   | `TaskStateEnd` | `"completed"` | Final state when the task is disposed.        |
+| `indent`         | `number`       | `0`           | Indentation level of the task.                |
+| `suffixDuration` | `boolean`      | `false`       | Whether to show the task duration when ended. |
 
 ### More examples
 

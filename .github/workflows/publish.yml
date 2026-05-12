@@ -2,6 +2,11 @@ name: Publish
 
 on:
   workflow_dispatch:
+    inputs:
+      version_suffix:
+        description: "Optional version suffix (e.g. rc.1)"
+        required: false
+        type: string
 
 jobs:
   publish:
@@ -14,4 +19,11 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - run: deno publish
+      - name: Update version with suffix
+        if: github.event.inputs.version_suffix != ''
+        run: |
+          VERSION_SUFFIX="${{ github.event.inputs.version_suffix }}"
+          # Ensure suffix starts with a dash if it doesn't already
+          [[ "$VERSION_SUFFIX" != -* ]] && VERSION_SUFFIX="-$VERSION_SUFFIX"
+          sed -i "s/\"version\": \"\(.*\)\"/\"version\": \"\1$VERSION_SUFFIX\"/" deno.jsonc
+      - run: deno task publish

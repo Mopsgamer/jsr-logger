@@ -3,35 +3,41 @@ import { stripAnsiCode } from "@std/fmt/colors";
 import { existsSync } from "node:fs";
 
 await new Deno.Command("deno", {
-  args: ["test", "--coverage", "--clean", "-q"],
+  args: ["test", "-A", "--coverage=coverage", "--clean", "-q"],
   stdout: "null",
 })
   .output();
 
-const outputCov = new TextDecoder().decode(
-  (await new Deno.Command("deno", { args: ["coverage", "-q"] })
+const outputCovRaw = new TextDecoder().decode(
+  (await new Deno.Command("deno", { args: ["coverage", "coverage"] })
     .output())
     .stdout,
 );
 
-const percentCov = parseFloat(
-  stripAnsiCode(
-    outputCov.split("\n")
-      .find((line) => line.includes("All files"))!
-      .split("|").at(-2)!,
-  ).trim(),
-);
+const summaryLine = stripAnsiCode(outputCovRaw).split("\n")
+  .find((line) => line.includes("All files"));
+
+const percentCov = summaryLine
+  ? parseFloat(
+    summaryLine.split("|").at(4)!.trim(),
+  )
+  : 0;
 
 const outputTest = new TextDecoder().decode(
-  (await new Deno.Command("deno", { args: ["test"] }).output())
+  (await new Deno.Command("deno", { args: ["test", "-A"] }).output())
     .stdout,
 );
 
-const summary = outputTest.split("\n")
-  .find((line) => line.includes("passed") && line.includes("failed"))!
-  .split("|").map((s) => stripAnsiCode(s).trim());
+const testSummaryLine = stripAnsiCode(outputTest).split("\n")
+  .find((line) => line.includes("passed") && line.includes("failed"));
 
-const passed = parseInt(summary.find((col) => col.includes("passed")) ?? "0");
+const summary = testSummaryLine
+  ? testSummaryLine.split("|").map((s) => s.trim())
+  : [];
+
+const passed = parseInt(
+  summary.find((col) => col.includes("passed"))?.split(" ")[0] ?? "0",
+);
 const failed = parseInt(summary.find((col) => col.includes("failed")) ?? "0");
 // const ignored = parseInt(summary.find((col) => col.includes("ignored")) ?? "0");
 const percentPass = passed / ((passed + failed) || passed) * 100;

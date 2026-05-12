@@ -289,8 +289,17 @@ export type SubtaskOptions = SetOptional<TaskOptions, "logger">;
  * Sticky process state logger. Default state is "idle", which makes it invisible.
  */
 export class Task extends EventTarget implements Disposable {
+  /**
+   * A promise that resolves when the task has ended.
+   */
   public promise: Promise<TaskStateEnd>;
+  /**
+   * Resolves the task's promise.
+   */
   protected resolve: (value: TaskStateEnd) => void;
+  /**
+   * Rejects the task's promise.
+   */
   protected reject: (err: unknown) => void;
   /**
    * Formats a list of tasks.
@@ -312,11 +321,16 @@ export class Task extends EventTarget implements Disposable {
    * @param task - The task to generate indentation for.
    * @returns A string representing the indentation.
    */
-  static indent = function (task: Task): string {
+  static indent: (task: Task) => string = function (task: Task): string {
     return "  | ".repeat(task.indent);
   };
 
-  static duration = function (task: Task): string {
+  /**
+   * Formats the duration of a task.
+   * @param task - The task to format the duration for.
+   * @returns A formatted string representing the duration.
+   */
+  static duration: (task: Task) => string = function (task: Task): string {
     if (task.duration === undefined) {
       return "";
     }
@@ -335,10 +349,15 @@ export class Task extends EventTarget implements Disposable {
   /**
    * The current state of the task.
    * @event "statechange"
+   * @returns The current state of the task.
    */
   get state(): TaskState {
     return this.#state;
   }
+  /**
+   * Sets the state of the task.
+   * @param value - The new state of the task.
+   */
   set state(value: TaskState) {
     this.#state = value;
     this.dispatchEvent(new Event("statechange"));
@@ -362,6 +381,7 @@ export class Task extends EventTarget implements Disposable {
   /**
    * The total duration of the task in nanoseconds.
    * If the task is still running, returns the time elapsed since it started.
+   * @returns The duration in nanoseconds.
    */
   get duration(): bigint | undefined {
     if (this.#duration) {
@@ -474,6 +494,9 @@ export class Task extends EventTarget implements Disposable {
  * Format type representing the task sprint messages.
  */
 export type TaskSprint = {
+  /**
+   * The formatted string for each task state.
+   */
   [key in TaskState]: string;
 };
 
@@ -482,7 +505,6 @@ export type TaskSprint = {
  */
 export class Logger {
   /**
-   * Wrapped in square brackets.
    * A string to prefix all logging methods, except {@link Logger.print} and {@link Logger.println}.
    * Affects {@link Logger.task}.
    */
