@@ -15,10 +15,19 @@ declare global {
 
 restoreCursor();
 
+/**
+ * The log-update instance used for interactive terminal rendering.
+ */
 export const logu = createLogUpdate(process.stdout, { showCursor: false });
 setupHooks();
 
+/**
+ * The list of all tasks.
+ */
 export const taskList: Task[] = [];
+/**
+ * A semaphore used to ensure that only one render loop is running at a time.
+ */
 export const mutex: Semaphore = new Semaphore(1);
 
 let lastActivity = 0;
@@ -52,6 +61,9 @@ export function clearTasksExceptIdle(): void {
   }
 }
 
+/**
+ * Renders the current list of tasks to the terminal.
+ */
 export function render(): void {
   const listString = Task.sprintList();
   if (isInteractive() || process.env.DEBUG) {
@@ -67,6 +79,10 @@ export function render(): void {
 }
 
 // deno-coverage-ignore-start
+/**
+ * The main render loop.
+ * @returns A promise that resolves when the render loop has finished.
+ */
 export async function renderer(): Promise<void> {
   const permit = mutex.tryAcquire();
   if (!permit) return;

@@ -4,9 +4,19 @@ import isInteractive from "is-interactive";
 import { format } from "./main.ts";
 
 /**
+ * State for the hooking mechanism.
+ */
+export interface HookState {
+  /**
+   * Whether the library is currently hooking output.
+   */
+  isHooking: boolean;
+}
+
+/**
  * State for the hooking mechanism to prevent recursion.
  */
-export const hookState = {
+export const hookState: HookState = {
   isHooking: false,
 };
 
