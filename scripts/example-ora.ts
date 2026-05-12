@@ -1,4 +1,4 @@
-import { Logger, type Task } from "../main.ts";
+import { Logger } from "../main.ts";
 import ora from "npm:ora";
 import isInteractive from "is-interactive";
 

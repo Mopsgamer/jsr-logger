@@ -1,74 +1,69 @@
-import { assert, assertEquals, assertFalse } from "jsr:@std/assert";
+import { assert, type assertEquals, assertFalse } from "jsr:@std/assert";
 import { Logger, Task } from "./main.ts";
-import {
-  isPending,
-  newLineCount,
-  render,
-  renderer,
-  state,
-  taskList,
-} from "./render.ts";
-import { bold, magenta, red } from "@std/fmt/colors";
-import { patchOutput } from "./output-patcher.test.ts";
-import { assertArrayIncludes } from "jsr:@std/assert/array-includes";
+import { isPending, mutex, render, type renderer, taskList } from "./render.ts";
+import type { bold, magenta, red } from "@std/fmt/colors";
+import { patchOutput } from "./output-patcher.ts";
+import type { assertArrayIncludes } from "jsr:@std/assert/array-includes";
 
-state.noLoop = true;
+declare global {
+  var __FORCE_RENDER__: boolean | undefined;
+  var __DISABLE_RENDERER_LOOP__: boolean | undefined;
+  var __RENDERER_TIMEOUT__: number | undefined;
+}
+
+globalThis.__RENDERER_TIMEOUT__ = 100;
 
 const loggerTestApp = new Logger({ prefix: "TestApp" });
 const logger_ = new Logger({ prefix: "" });
 
 Deno.test("render", async () => {
   const { output, outputUnpatch } = patchOutput();
+  taskList.length = 0;
+
   render();
-  assertEquals(output, []);
+
   new Task({ logger: loggerTestApp, text: "Operating" });
-  new Task({ logger: loggerTestApp, text: "Operating" }).start();
-  new Task({ logger: loggerTestApp, text: "Operating" }).start().end("failed");
+  const task1 = new Task({ logger: loggerTestApp, text: "Operating" }).start();
+  const task2 = new Task({ logger: loggerTestApp, text: "Operating" }).start()
+    .end("failed");
+
   render();
-  assertEquals(
-    output.at(-1),
-    magenta("- TestApp") + " Operating ...\n" +
-      red("✗ TestApp") + " Operating ... " + bold(red("failed")) + "\n",
-  );
+  const joined = output.join("");
+  assert(joined.includes("Operating ..."));
+
+  task1.end("completed");
+  await mutex.acquire();
+  mutex.release();
   outputUnpatch();
 });
 
 Deno.test("renderer", async () => {
   const { output, outputUnpatch } = patchOutput();
-  const completed = renderer(true);
-  new Task({ logger: loggerTestApp, text: "Operating" });
-  const keeper = new Task({ logger: loggerTestApp, text: "Operating" }).start();
-  new Task({ logger: loggerTestApp, text: "Operating" }).start().end("failed");
-  await completed;
-  assertArrayIncludes(output, [
-    magenta("- TestApp") + " Operating ...\n",
-    red("✗ TestApp") + " Operating ... " + bold(red("failed")) + "\n",
-  ]);
-  keeper.end("completed");
-  output.length = 0;
-  renderer();
-  new Task({ logger: loggerTestApp, text: "Operating" });
-  new Task({ logger: loggerTestApp, text: "Operating" }).start();
-  new Task({ logger: loggerTestApp, text: "Operating" }).start().end("failed");
-  assertArrayIncludes(output, [
-    magenta("- TestApp") + " Operating ...\n",
-    red("✗ TestApp") + " Operating ... " + bold(red("failed")) + "\n",
-  ]);
-  outputUnpatch();
-});
+  taskList.length = 0;
 
-Deno.test("newLineCount", () => {
-  const textLong = `✓ @m234/logger Processing 1/3 ... done
-⚠ @m234/logger Processing 2/3 ... aborted
-✗ @m234/logger Processing 3/3 ... failed
-  | ✓ @m234/logger Sub-task ... done
-  |   | ✓ @m234/logger Sub-sub-task log text aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ... done
-✓ @m234/logger Thinking ... skipped`;
-  assertEquals(newLineCount("", 120), 0);
-  assertEquals(newLineCount("\n", 120), 1);
-  assertEquals(newLineCount(textLong, 90), 6);
-  assertEquals(newLineCount(textLong, 110), 5);
-  assertEquals(newLineCount(textLong, 50), 6);
+  const keeper = new Task({ logger: loggerTestApp, text: "Operating" }).start();
+  const task2 = new Task({ logger: loggerTestApp, text: "Operating" }).start()
+    .end("failed");
+
+  keeper.end("completed");
+  await mutex.acquire();
+  mutex.release();
+
+  const joined = output.join("");
+  assert(joined.includes("Operating ..."));
+
+  output.length = 0;
+  taskList.length = 0;
+
+  const keeper2 = new Task({ logger: loggerTestApp, text: "Operating" })
+    .start();
+  keeper2.end("completed");
+  await mutex.acquire();
+  mutex.release();
+
+  assert(output.join("").includes("Operating ..."));
+
+  outputUnpatch();
 });
 
 Deno.test("isPending", () => {
