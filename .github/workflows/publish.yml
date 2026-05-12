@@ -3,8 +3,8 @@ name: Publish
 on:
   workflow_dispatch:
     inputs:
-      version_suffix:
-        description: "Optional version suffix (e.g. rc.1)"
+      pre:
+        description: "Optional version suffix (e.g. pre.1)"
         required: false
         type: string
 
@@ -20,9 +20,9 @@ jobs:
         with:
           deno-version: v2.x
       - name: Update version with suffix
-        if: github.event.inputs.version_suffix != ''
+        if: github.event.inputs.pre != ''
         run: |
-          VERSION_SUFFIX="${{ github.event.inputs.version_suffix }}"
+          VERSION_SUFFIX="${{ github.event.inputs.pre }}"
           # Ensure suffix starts with a dash if it doesn't already
           [[ "$VERSION_SUFFIX" != -* ]] && VERSION_SUFFIX="-$VERSION_SUFFIX"
           sed -i "s/\"version\": \"\(.*\)\"/\"version\": \"\1$VERSION_SUFFIX\"/" deno.jsonc

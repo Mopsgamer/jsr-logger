@@ -3,13 +3,13 @@ import { stripAnsiCode } from "@std/fmt/colors";
 import { existsSync } from "node:fs";
 
 await new Deno.Command("deno", {
-  args: ["test", "-A", "--coverage=coverage", "--clean", "-q"],
+  args: ["test", "-A", "--coverage", "--clean", "-q"],
   stdout: "null",
 })
   .output();
 
 const outputCovRaw = new TextDecoder().decode(
-  (await new Deno.Command("deno", { args: ["coverage", "coverage"] })
+  (await new Deno.Command("deno", { args: ["coverage"] })
     .output())
     .stdout,
 );

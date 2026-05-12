@@ -1,5 +1,3 @@
 node_modules
 coverage
-cov_dir
 *.lcov
-coverage_details.txt
