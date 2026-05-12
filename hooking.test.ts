@@ -1,8 +1,16 @@
 import { Logger } from "./main.ts";
-import { assert, type assertEquals } from "jsr:@std/assert";
-import { patchOutput } from "./output-patcher.test.ts";
+import { assertEquals, assert } from "jsr:@std/assert";
+import { patchOutput } from "./output-patcher.ts";
 import { mutex, taskList } from "./render.ts";
 import process from "node:process";
+
+declare global {
+  var __DISABLE_HOOKS__: boolean | undefined;
+  var __LOGGER_HOOKS_SETUP__: boolean | undefined;
+  var __RENDERER_TIMEOUT__: number | undefined;
+}
+
+globalThis.__RENDERER_TIMEOUT__ = 100;
 
 Deno.test("hooking: console.log during task", async () => {
   const originalEnv = process.env.DEBUG;
@@ -25,7 +33,8 @@ Deno.test("hooking: console.log during task", async () => {
   assert(joinedOutput.includes("Logged during task"));
 
   outputUnpatch();
-  process.env.DEBUG = originalEnv;
+  if (originalEnv === undefined) delete process.env.DEBUG;
+  else process.env.DEBUG = originalEnv;
 });
 
 Deno.test("hooking: process.stdout.write during task", async () => {
@@ -45,13 +54,11 @@ Deno.test("hooking: process.stdout.write during task", async () => {
   mutex.release();
 
   const joinedOutput = output.join("");
-  assert(
-    joinedOutput.includes("Direct write during task") ||
-      joinedOutput.includes("Task 1"),
-  );
+  assert(joinedOutput.includes("Direct write during task") || joinedOutput.includes("Task 1"));
 
   outputUnpatch();
-  process.env.DEBUG = originalEnv;
+  if (originalEnv === undefined) delete process.env.DEBUG;
+  else process.env.DEBUG = originalEnv;
 });
 
 if (typeof Deno !== "undefined") {
@@ -65,21 +72,17 @@ if (typeof Deno !== "undefined") {
 
     const task = logger.task({ text: "Task 1" }).start();
 
-    Deno.stdout.writeSync(
-      new TextEncoder().encode("Deno writeSync during task\n"),
-    );
+    Deno.stdout.writeSync(new TextEncoder().encode("Deno writeSync during task\n"));
 
     task.end("completed");
     await mutex.acquire();
     mutex.release();
 
     const joinedOutput = output.join("");
-    assert(
-      joinedOutput.includes("Deno writeSync during task") ||
-        joinedOutput.includes("Task 1"),
-    );
+    assert(joinedOutput.includes("Deno writeSync during task") || joinedOutput.includes("Task 1"));
 
     outputUnpatch();
-    process.env.DEBUG = originalEnv;
+    if (originalEnv === undefined) delete process.env.DEBUG;
+    else process.env.DEBUG = originalEnv;
   });
 }

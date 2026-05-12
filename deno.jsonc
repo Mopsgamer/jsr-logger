@@ -15,6 +15,10 @@
       "tags": ["jsr"]
     }
   },
+  "test": {
+    "include": ["**/*.test.ts", "**/test.ts"],
+    "exclude": ["scripts/"]
+  },
   "publish": {
     "include": [
       "README.*",

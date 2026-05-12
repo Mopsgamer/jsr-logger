@@ -1,14 +1,4 @@
-import {
-  type DefaultTaskOptions,
-  type format,
-  type LoggerOptions,
-  type sprintLevel,
-  type sprintTask,
-  type startRunner,
-  type SubtaskOptions,
-  Task,
-  type TaskOptions,
-} from "./main.ts";
+import { Task } from "./main.ts";
 import { Semaphore } from "@std/async/unstable-semaphore";
 import { delay } from "@std/async/delay";
 import restoreCursor from "restore-cursor";
@@ -17,6 +7,12 @@ import { createLogUpdate } from "log-update";
 import isInteractive from "is-interactive";
 import { hookState, setupHooks } from "./hook.ts";
 
+declare global {
+  var __FORCE_RENDER__: boolean | undefined;
+  var __RENDERER_TIMEOUT__: number | undefined;
+  var __DISABLE_RENDERER_LOOP__: boolean | undefined;
+}
+
 restoreCursor();
 
 export const logu = createLogUpdate(process.stdout, { showCursor: false });
@@ -24,6 +20,15 @@ setupHooks();
 
 export const taskList: Task[] = [];
 export const mutex: Semaphore = new Semaphore(1);
+
+let lastActivity = 0;
+
+/**
+ * Updates the last activity timestamp to keep the renderer alive.
+ */
+export function activity(): void {
+  lastActivity = Date.now();
+}
 
 /**
  * Returns true if there are any tasks that are currently in the "started" state.
@@ -54,7 +59,6 @@ export function render(): void {
     logu(listString);
     hookState.isHooking = false;
   } else {
-    // @ts-ignore
     if (globalThis.__FORCE_RENDER__) {
       process.stdout.write(listString);
     }
@@ -68,16 +72,30 @@ export async function renderer(): Promise<void> {
   if (!permit) return;
   using _ = permit;
 
-  if (isInteractive() || process.env.DEBUG) {
-    while (isPending()) {
-      // @ts-ignore
-      if (globalThis.__DISABLE_RENDERER_LOOP__) break;
-      await delay(1000 / 20);
-      render();
-    }
-  }
+  const timeout = globalThis.__RENDERER_TIMEOUT__ ?? 2000;
 
-  render();
-  clearTasksExceptIdle();
+  try {
+    if (isInteractive() || process.env.DEBUG) {
+      while (true) {
+        const pending = isPending();
+        const now = Date.now();
+        const inactiveTime = now - lastActivity;
+
+        if (!pending && inactiveTime >= timeout) {
+          break;
+        }
+
+        if (globalThis.__DISABLE_RENDERER_LOOP__) break;
+
+        await delay(1000 / 20);
+        render();
+      }
+    }
+
+    render();
+    clearTasksExceptIdle();
+  } finally {
+    logu.done();
+  }
 }
 // deno-coverage-ignore-stop
