@@ -12,8 +12,7 @@
     "npm:badge-maker@*": "5.0.2",
     "npm:is-interactive@2": "2.0.0",
     "npm:log-update@8": "8.0.0",
-    "npm:ora@*": "8.2.0",
-    "npm:restore-cursor@^5.1.0": "5.1.0"
+    "npm:ora@*": "8.2.0"
   },
   "jsr": {
     "@m234/ns@1.1.0": {
@@ -237,8 +236,7 @@
       "jsr:@std/fmt@^1.0.9",
       "npm:@types/node@^24.10.15",
       "npm:is-interactive@2",
-      "npm:log-update@8",
-      "npm:restore-cursor@^5.1.0"
+      "npm:log-update@8"
     ]
   }
 }

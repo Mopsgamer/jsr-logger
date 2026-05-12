@@ -1,7 +1,6 @@
 import { Task } from "./main.ts";
 import { Semaphore } from "@std/async/unstable-semaphore";
 import { delay } from "@std/async/delay";
-import restoreCursor from "restore-cursor";
 import process from "node:process";
 import { createLogUpdate } from "log-update";
 import isInteractive from "is-interactive";
@@ -13,7 +12,23 @@ declare global {
   var __DISABLE_RENDERER_LOOP__: boolean | undefined;
 }
 
-restoreCursor();
+function show(): void {
+  process.stderr.write("\x1B[?25h");
+}
+
+process.on("exit", show);
+process.on("SIGINT", () => {
+  show();
+  process.exit(130);
+});
+process.on("SIGTERM", () => {
+  show();
+  process.exit(143);
+});
+process.on("uncaughtException", (err) => {
+  show();
+  throw err;
+});
 
 /**
  * The log-update instance used for interactive terminal rendering.

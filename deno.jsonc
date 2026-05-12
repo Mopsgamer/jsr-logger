@@ -41,7 +41,6 @@
     "@std/fmt": "jsr:@std/fmt@^1.0.9",
     "@types/node": "npm:@types/node@^24.10.15",
     "is-interactive": "npm:is-interactive@^2.0.0",
-    "log-update": "npm:log-update@^8.0.0",
-    "restore-cursor": "npm:restore-cursor@^5.1.0"
+    "log-update": "npm:log-update@^8.0.0"
   }
 }
