@@ -55,10 +55,10 @@ export function sprintLevel(
       prefix = green("✓ " + prefix);
       break;
     default:
-      prefix = prefix;
       break;
   }
-  return `${prefix} ${message}`;
+  prefix &&= prefix + " ";
+  return prefix + message;
 }
 
 /**
@@ -68,17 +68,19 @@ export function sprintLevel(
  * @returns A structure representing the formatted messages for each task state.
  */
 export function sprintTask(prefix: string, text: string): TaskSprint {
-  const left = ` ${text} ...`;
+  const prefixs = prefix && " ";
+  text &&= text + " ";
+
   const taskSprint: TaskSprint = {
     idle: "",
-    started: magenta("- " + prefix) + left,
-    aborted: sprintLevel(prefix, text, "warn") + " ... " +
+    started: magenta("- " + prefix) + prefixs + text + "...",
+    aborted: sprintLevel(prefix, text, "warn") + "... " +
       bold(yellow("aborted")),
-    completed: sprintLevel(prefix, text, "success") + " ... " +
+    completed: sprintLevel(prefix, text, "success") + "... " +
       bold(green("done")),
-    failed: sprintLevel(prefix, text, "error") + " ... " +
+    failed: sprintLevel(prefix, text, "error") + "... " +
       bold(red("failed")),
-    skipped: gray("✓ " + prefix) + " " + text + " ... " +
+    skipped: gray("✓ " + prefix) + prefixs + text + "... " +
       gray("skipped"),
   };
   return taskSprint;
@@ -533,16 +535,20 @@ export class Logger {
    * @param message - The message to print.
    * @returns A promise that resolves when the message has been printed.
    */
-  async print(message: string): Promise<void> {
-    if (this.disabled) return;
+  print(message: string): Promise<void> {
+    if (this.disabled) return Promise.resolve();
     if (!isInteractive()) {
       process.stdout.write(message);
-      return;
+      return Promise.resolve();
       // deno-coverage-ignore-start
     }
-    await mutex.acquire();
-    process.stdout.write(message);
-    mutex.release();
+    const { promise, resolve } = Promise.withResolvers<void>();
+    mutex.acquire().then((d) => {
+      process.stdout.write(message);
+      mutex.release();
+      resolve();
+    });
+    return promise;
   }
   // deno-coverage-ignore-stop
 
