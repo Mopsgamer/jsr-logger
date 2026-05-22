@@ -93,7 +93,7 @@ Deno.test("Logger.info logs informational messages", async () => {
 });
 
 Deno.test("Logger.warn logs warning messages", async () => {
-  const { output, outputUnpatch } = patchOutput();
+  const { output } = patchOutput();
   const logger = new Logger({ prefix: "TestApp" });
   await logger.warn("This is a warning.");
   assertEquals(
@@ -114,7 +114,7 @@ Deno.test("Logger.error logs error messages", async () => {
 });
 
 Deno.test("Logger.success logs success messages", async () => {
-  const { output, outputUnpatch } = patchOutput();
+  const { output } = patchOutput();
   const logger = new Logger({ prefix: "TestApp" });
   await logger.success("This is a success message.");
   assertEquals(
@@ -251,6 +251,7 @@ Deno.test("task.startRunner", async (t) => {
       assertEquals(task.state, "completed");
 
       asyncTask = logger.task({ text: "1" }).startRunner(
+        // deno-lint-ignore require-await
         async ({ task }): Promise<TaskStateEnd> => {
           assertEquals(task.state, "started");
           return "aborted";
@@ -291,6 +292,7 @@ Deno.test("task.startRunner", async (t) => {
       asyncTask = logger.task({
         text: "catch error",
       })
+        // deno-lint-ignore require-await
         .startRunner(async () => {
           throw new Error("aborted");
         });
@@ -330,6 +332,7 @@ Deno.test("task.startRunner return/throw undefined", async () => {
   asyncTask = logger.task({
     text: "catch undefined",
     disposeState: "skipped",
+    // deno-lint-ignore require-await
   }).startRunner(async () => {
     throw undefined;
   });
@@ -338,6 +341,7 @@ Deno.test("task.startRunner return/throw undefined", async () => {
   asyncTask = logger.task({
     text: "catch undefined",
     disposeState: "skipped",
+    // deno-lint-ignore require-await
   }).startRunner(async (): Promise<TaskStateEnd> => {
     return "failed";
   });
@@ -345,7 +349,7 @@ Deno.test("task.startRunner return/throw undefined", async () => {
   renderingState.__DISABLE_RENDERER_LOOP__ = false;
 });
 
-Deno.test("task.startRunner: runner returns void", async () => {
+Deno.test("task.startRunner: runner returns void", () => {
   const logger = new Logger({ prefix: "TestApp" });
   renderingState.__DISABLE_RENDERER_LOOP__ = true;
   const task = logger.task({ text: "void return", disposeState: "completed" })
@@ -356,7 +360,7 @@ Deno.test("task.startRunner: runner returns void", async () => {
   renderingState.__DISABLE_RENDERER_LOOP__ = false;
 });
 
-Deno.test("task.startRunner: runner throws string", async () => {
+Deno.test("task.startRunner: runner throws string", () => {
   const logger = new Logger({ prefix: "TestApp" });
   renderingState.__DISABLE_RENDERER_LOOP__ = true;
   const task = logger.task({ text: "throw string", disposeState: "failed" })

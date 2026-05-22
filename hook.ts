@@ -40,6 +40,7 @@ export function setupHooks(force: boolean = false): void {
         hookState.isHooking || !isPending() || hookState.__DISABLE_HOOKS__ ||
         !check()
       ) {
+        // deno-lint-ignore ban-types
         return (original as Function).apply(console, args);
       }
       hookState.isHooking = true;

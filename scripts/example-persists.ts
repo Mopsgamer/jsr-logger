@@ -5,7 +5,7 @@ const logger = new Logger({
   defaultTaskOptions: { suffixDuration: true },
 });
 
-let task1 = logger.task({ text: "How the console.log persists?" })
+const task1 = logger.task({ text: "How the console.log persists?" })
   .start();
 setTimeout(() => task1.end("completed"), 3000);
 setTimeout(() => console.log("console.log 500"), 500);

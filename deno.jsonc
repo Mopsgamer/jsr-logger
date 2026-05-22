@@ -12,10 +12,21 @@
   },
   "lint": {
     "rules": {
-      "tags": ["jsr"]
+      "tags": ["jsr", "recommended"],
+      "exclude": [
+        "no-control-regex",
+        "no-unversioned-import",
+        "no-explicit-any"
+      ]
     }
   },
   "test": {
+    "permissions": {
+      "env": true,
+      "sys": true
+    },
+    "sanitizeOps": true,
+    "sanitizeResources": true,
     "include": ["**/*.test.ts", "**/test.ts"],
     "exclude": ["scripts/"]
   },

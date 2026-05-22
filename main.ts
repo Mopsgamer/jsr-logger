@@ -152,7 +152,7 @@ function resolveEndState(
   state: Promise<TaskStateEnd | void>,
   task: Task,
 ): Promise<Task> {
-  return new Promise<Task>((resolve, reject) => {
+  return new Promise<Task>((resolve) => {
     Promise.resolve(state).then((state) => {
       resolve(task.end(state ?? task.disposeState));
     }).catch((e) => {

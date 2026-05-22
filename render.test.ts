@@ -1,6 +1,6 @@
 import { assert, assertFalse } from "jsr:@std/assert";
 import { Logger, Task } from "./main.ts";
-import { isPending, mutex, render, type renderer, taskList } from "./render.ts";
+import { isPending, mutex, render, taskList } from "./render.ts";
 import { patchOutput } from "./output-patcher.ts";
 
 const loggerTestApp = new Logger({ prefix: "TestApp" });
@@ -14,7 +14,7 @@ Deno.test("render", async () => {
 
   new Task({ logger: loggerTestApp, text: "Operating" });
   const task1 = new Task({ logger: loggerTestApp, text: "Operating" }).start();
-  const task2 = new Task({ logger: loggerTestApp, text: "Operating" }).start()
+  new Task({ logger: loggerTestApp, text: "Operating" }).start()
     .end("failed");
 
   render();
@@ -32,7 +32,7 @@ Deno.test("renderer", async () => {
   taskList.length = 0;
 
   const keeper = new Task({ logger: loggerTestApp, text: "Operating" }).start();
-  const task2 = new Task({ logger: loggerTestApp, text: "Operating" }).start()
+  new Task({ logger: loggerTestApp, text: "Operating" }).start()
     .end("failed");
 
   keeper.end("completed");
