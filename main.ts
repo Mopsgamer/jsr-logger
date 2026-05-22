@@ -231,7 +231,7 @@ export type LoggerOptions = {
   prefix: string;
   /**
    * Whether the logging is disabled.
-   * @defult false
+   * @default false
    */
   disabled?: boolean;
   /**
@@ -265,7 +265,7 @@ export type TaskOptions = {
   disposeState?: TaskStateEnd;
   /**
    * Indentation level.
-   * @defult 0
+   * @default 0
    */
   indent?: number;
   /**
@@ -273,6 +273,12 @@ export type TaskOptions = {
    * @default false
    */
   suffixDuration?: boolean;
+  /**
+   * Whether the task should be redrawn.
+   * If disabled, primitive logging is used.
+   * @default true
+   */
+  interactive?: boolean;
 };
 
 /**
@@ -295,6 +301,10 @@ export class Task extends EventTarget implements Disposable {
    * A promise that resolves when the task has ended.
    */
   public promise: Promise<TaskStateEnd>;
+  #interactive: boolean;
+  public get interactive(): boolean {
+    return this.#interactive && isInteractive();
+  }
   /**
    * Resolves the task's promise.
    */
@@ -308,7 +318,9 @@ export class Task extends EventTarget implements Disposable {
    * @returns A formatted string that ends with a new line if there are any visible tasks.
    */
   static sprintList(): string {
-    const visibleTasks = taskList.filter((task) => task.#state !== "idle");
+    const visibleTasks = taskList.filter((task) =>
+      task.#state !== "idle" && task.interactive
+    );
     let result = "";
     if (visibleTasks.length > 0) {
       for (const task of visibleTasks) {
@@ -403,7 +415,7 @@ export class Task extends EventTarget implements Disposable {
     this.indent = Math.max(options.indent ?? 0);
     this.suffixDuration = options.suffixDuration ?? false;
     this.logger = options.logger;
-
+    this.#interactive = options.interactive ?? true;
     ({
       promise: this.promise,
       resolve: this.resolve,
@@ -412,7 +424,7 @@ export class Task extends EventTarget implements Disposable {
 
     taskList.push(this);
     // deno-coverage-ignore
-    if (isInteractive()) renderer();
+    if (this.interactive) renderer();
   }
 
   /**
@@ -437,7 +449,7 @@ export class Task extends EventTarget implements Disposable {
     this.state = "started";
     this.#start = process.hrtime.bigint();
     if (this.logger.disabled) return this;
-    if (!isInteractive()) {
+    if (!this.interactive) {
       process.stdout.write(this.sprint() + "\n");
     }
     return this;
@@ -454,7 +466,7 @@ export class Task extends EventTarget implements Disposable {
     this.state = state;
     this.resolve(state);
     if (this.logger.disabled) return this;
-    if (!isInteractive()) {
+    if (!this.interactive) {
       process.stdout.write(this.sprint() + "\n");
     }
     return this;
@@ -542,13 +554,19 @@ export class Logger {
       return Promise.resolve();
       // deno-coverage-ignore-start
     }
-    const { promise, resolve } = Promise.withResolvers<void>();
-    mutex.acquire().then((d) => {
-      process.stdout.write(message);
-      mutex.release();
-      resolve();
-    });
-    return promise;
+    const ac = mutex.tryAcquire();
+    if (!ac) {
+      const { promise, resolve } = Promise.withResolvers<void>();
+      mutex.acquire().then(() => {
+        process.stdout.write(message);
+        mutex.release();
+        resolve();
+      });
+      return promise;
+    }
+    process.stdout.write(message);
+    mutex.release();
+    return Promise.resolve();
   }
   // deno-coverage-ignore-stop
 
@@ -635,6 +653,7 @@ export class Logger {
       state: options.state ?? this.defaultTaskOptions.state,
       suffixDuration: options.suffixDuration ??
         this.defaultTaskOptions.suffixDuration,
+      interactive: options.interactive ?? this.defaultTaskOptions.interactive,
     });
   }
 }

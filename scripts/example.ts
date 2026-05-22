@@ -3,7 +3,7 @@ import { delay } from "@std/async";
 
 const logger = new Logger({
   prefix: "@m234/logger",
-  defaultTaskOptions: { suffixDuration: true },
+  defaultTaskOptions: { suffixDuration: true, interactive: false },
 });
 
 logger.info("Info message.");

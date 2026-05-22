@@ -75,7 +75,7 @@ export function isPending(): boolean {
 /**
  * Clears all tasks that have reached an end state.
  */
-export function clearTasksExceptIdle(): void {
+export function clearSettledTasks(): void {
   for (let i = taskList.length - 1; i >= 0; i--) {
     const state = taskList[i].state;
     if (state !== "idle" && state !== "started") {
@@ -132,7 +132,7 @@ export async function renderer(): Promise<void> {
     }
 
     render();
-    clearTasksExceptIdle();
+    clearSettledTasks();
   } finally {
     logu.done();
   }
