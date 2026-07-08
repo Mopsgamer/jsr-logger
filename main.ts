@@ -97,6 +97,11 @@ export type TaskStateStart = "started" | "idle";
 export type TaskStateEnd = "completed" | "aborted" | "failed" | "skipped";
 
 /**
+ * Return type of the task runner.
+ */
+export type TaskRunnerReturn = TaskStateEnd | void | never;
+
+/**
  * Array of valid end states for tasks.
  */
 export const taskStateEnd: ["failed", "completed", "aborted", "skipped"] = [
@@ -124,14 +129,14 @@ export type AnyRunner = SyncRunner | AsyncRunner;
 /**
  * Synchronous task runner type.
  */
-export type SyncRunner = TaskRunner<TaskStateEnd | void>;
+export type SyncRunner = TaskRunner<TaskRunnerReturn>;
 
 /**
  * Asynchronous task runner type.
  */
 export type AsyncRunner =
-  | Promise<TaskStateEnd | void>
-  | TaskRunner<Promise<TaskStateEnd | void>>;
+  | Promise<TaskRunnerReturn>
+  | TaskRunner<Promise<TaskRunnerReturn>>;
 
 function catchEndState(
   e: unknown,
@@ -149,7 +154,7 @@ function catchEndState(
 }
 
 function resolveEndState(
-  state: Promise<TaskStateEnd | void>,
+  state: Promise<TaskRunnerReturn>,
   task: Task,
 ): Promise<Task> {
   return new Promise<Task>((resolve) => {
@@ -210,11 +215,6 @@ export function startRunner(
   }
   return task;
 }
-
-/**
- * Return type of the task runner.
- */
-type TaskRunnerReturn = TaskStateEnd | void | never;
 
 /**
  * Logger levels for formatted console output.
