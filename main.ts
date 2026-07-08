@@ -270,9 +270,10 @@ export type TaskOptions = {
   indent?: number;
   /**
    * Whether the duration of the task should be shown.
+   * If a bigint is provided, the duration is shown live if it's more than the threshold.
    * @default false
    */
-  suffixDuration?: boolean;
+  suffixDuration?: boolean | bigint;
   /**
    * Whether the task should be redrawn.
    * If disabled, primitive logging is used.
@@ -387,8 +388,9 @@ export class Task extends EventTarget implements Disposable {
   text: string;
   /**
    * Whether the duration of the task should be shown.
+   * If a bigint is provided, the duration is shown live if it's more than the threshold.
    */
-  suffixDuration: boolean;
+  suffixDuration: boolean | bigint;
 
   #start: bigint | undefined;
   #duration: bigint | undefined;
@@ -434,7 +436,19 @@ export class Task extends EventTarget implements Disposable {
   sprint(): string {
     if (this.logger.disabled) return "";
     const isEnded = this.#state !== "idle" && this.#state !== "started";
-    let duration = this.suffixDuration && isEnded ? Task.duration(this) : "";
+    let showDuration = false;
+    if (isEnded) {
+      showDuration = this.suffixDuration !== false;
+    } else if (
+      this.#state === "started" && typeof this.suffixDuration === "bigint"
+    ) {
+      const d = this.duration;
+      if (d !== undefined && d > this.suffixDuration) {
+        showDuration = true;
+      }
+    }
+
+    let duration = showDuration ? Task.duration(this) : "";
     duration &&= " " + duration;
     return Task.indent(this) +
       sprintTask(this.logger.prefix, this.text)[this.#state] +
