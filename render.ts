@@ -24,24 +24,31 @@ function show(): void {
   process.stderr.write("\x1B[?25h");
 }
 
-process.on("exit", show);
-process.on("SIGINT", () => {
-  show();
-  process.exit(130);
-});
-process.on("SIGTERM", () => {
-  show();
-  process.exit(143);
-});
-process.on("uncaughtException", (err) => {
-  show();
-  throw err;
-});
-
 /**
  * The log-update instance used for interactive terminal rendering.
  */
 export const logu = createLogUpdate(process.stdout, { showCursor: false });
+
+function cleanup(): void {
+  hookState.isHooking = true;
+  logu.clear();
+  hookState.isHooking = false;
+}
+
+process.on("exit", show);
+process.on("SIGINT", () => {
+  cleanup();
+  process.exit(130);
+});
+process.on("SIGTERM", () => {
+  cleanup();
+  process.exit(143);
+});
+process.on("uncaughtException", (err) => {
+  cleanup();
+  show();
+  throw err;
+});
 setupHooks();
 
 /**
