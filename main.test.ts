@@ -155,6 +155,46 @@ Deno.test("Task.duration exists", async () => {
   outputUnpatch();
 });
 
+Deno.test("Task.duration live", async () => {
+  const { output, outputUnpatch } = patchOutput();
+  const logger = new Logger({ prefix: "TestApp" });
+  const task = logger.task({
+    text: "Operating",
+    suffixDuration: 50_000_000n, // 50ms
+  });
+  task.start();
+  assertEquals(task.sprint(), magenta("- TestApp") + " Operating ...");
+  await delay(100);
+  assertMatch(
+    task.sprint(),
+    /\x1b\[35m- TestApp\x1b\[39m Operating ... [µ\w]+/,
+  );
+  task.end("completed");
+  assertMatch(
+    task.sprint(),
+    /\x1b\[32m✓ TestApp\x1b\[39m Operating ... \x1b\[1m\x1b\[32mdone\x1b\[39m\x1b\[22m [µ\w]+/,
+  );
+  outputUnpatch();
+});
+
+Deno.test("Task.duration live 0n", async () => {
+  const logger = new Logger({ prefix: "TestApp" });
+  const task = logger.task({
+    text: "Operating",
+    suffixDuration: 0n,
+  });
+  task.start();
+  assertMatch(
+    task.sprint(),
+    /\x1b\[35m- TestApp\x1b\[39m Operating ... [µ\w]+/,
+  );
+  task.end("completed");
+  assertMatch(
+    task.sprint(),
+    /\x1b\[32m✓ TestApp\x1b\[39m Operating ... \x1b\[1m\x1b\[32mdone\x1b\[39m\x1b\[22m [µ\w]+/,
+  );
+});
+
 Deno.test("Task.disabled disables task logging", async () => {
   const { output, outputUnpatch } = patchOutput();
   const logger = new Logger({ prefix: "TestApp", disabled: true });

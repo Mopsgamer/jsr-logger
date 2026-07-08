@@ -128,7 +128,7 @@ interactive task display remains at the bottom of the terminal.
 | `state`          | `TaskState`    | `"idle"`      | Initial state of the task.                          |
 | `disposeState`   | `TaskStateEnd` | `"completed"` | Final state when the task is disposed.              |
 | `indent`         | `number`       | `0`           | Indentation level of the task.                      |
-| `suffixDuration` | `boolean`      | `false`       | Whether to show the task duration when ended.       |
+| `suffixDuration` | `boolean \| bigint` | `false` | Whether to show the task duration. If a bigint is provided, the duration is shown live if it's more than the threshold. |
 | `interactive`    | `boolean`      | `true`        | Whether the task rendering shouldn't be simplified. |
 
 ### More examples
