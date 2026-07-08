@@ -156,7 +156,7 @@ Deno.test("Task.duration exists", async () => {
 });
 
 Deno.test("Task.duration live", async () => {
-  const { output, outputUnpatch } = patchOutput();
+  const { outputUnpatch } = patchOutput();
   const logger = new Logger({ prefix: "TestApp" });
   const task = logger.task({
     text: "Operating",
@@ -184,6 +184,7 @@ Deno.test("Task.duration live 0n", async () => {
     suffixDuration: 0n,
   });
   task.start();
+  await delay(1);
   assertMatch(
     task.sprint(),
     /\x1b\[35m- TestApp\x1b\[39m Operating ... [µ\w]+/,
