@@ -11,6 +11,7 @@
     "npm:@types/node@^24.10.15": "24.10.15",
     "npm:badge-maker@*": "5.0.2",
     "npm:is-interactive@2": "2.0.0",
+    "npm:log-update@*": "8.0.0",
     "npm:log-update@8": "8.0.0",
     "npm:ora@*": "8.2.0"
   },
