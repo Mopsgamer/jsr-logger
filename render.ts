@@ -97,6 +97,7 @@ export function clearSettledTasks(): void {
  */
 export function render(): void {
   const listString = Task.sprintList();
+  if (listString === "") return;
   if (isInteractive() || process.env.DEBUG) {
     hookState.isHooking = true;
     logu(listString);
