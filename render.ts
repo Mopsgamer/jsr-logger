@@ -31,7 +31,8 @@ export const logu = createLogUpdate(process.stdout, { showCursor: false });
 
 function cleanup(): void {
   hookState.isHooking = true;
-  logu.clear();
+  taskList.length = 0;
+  // logu.clear(); // we don't want to remove the print
   hookState.isHooking = false;
 }
 
