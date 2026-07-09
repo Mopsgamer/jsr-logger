@@ -11,8 +11,7 @@ export interface HookState {
    * Whether the library is currently hooking output.
    */
   isHooking: boolean;
-  __DISABLE_HOOKS__?: boolean;
-  __LOGGER_HOOKS_SETUP__?: boolean;
+  hooksSetup?: boolean;
 }
 
 /**
@@ -26,18 +25,18 @@ export const hookState: HookState = {
  * Sets up hooks for stdout and stderr to intercept output and persist it
  * using log-update when tasks are pending.
  */
-export function setupHooks(force: boolean = false): void {
-  if (hookState.__LOGGER_HOOKS_SETUP__ && !force) return;
-  hookState.__LOGGER_HOOKS_SETUP__ = true;
+export function setupHooks(): void {
+  if (hookState.hooksSetup) return;
+  hookState.hooksSetup = true;
 
-  const check = () => isInteractive() || process.env.DEBUG || force;
+  const check = () => isInteractive() || process.env.DEBUG;
 
   const wrapConsole = (method: keyof Console) => {
     const original = console[method];
     if (typeof original !== "function") return;
     console[method] = (...args: any[]) => {
       if (
-        hookState.isHooking || !isPending() || hookState.__DISABLE_HOOKS__ ||
+        hookState.isHooking || !isPending() ||
         !check()
       ) {
         // deno-lint-ignore ban-types
@@ -65,7 +64,7 @@ export function setupHooks(force: boolean = false): void {
     callback?: any,
   ): boolean => {
     if (
-      hookState.isHooking || !isPending() || hookState.__DISABLE_HOOKS__ ||
+      hookState.isHooking || !isPending() ||
       !check()
     ) {
       return originalStdoutWrite.call(
@@ -93,7 +92,7 @@ export function setupHooks(force: boolean = false): void {
     callback?: any,
   ): boolean => {
     if (
-      hookState.isHooking || !isPending() || hookState.__DISABLE_HOOKS__ ||
+      hookState.isHooking || !isPending() ||
       !check()
     ) {
       return originalStderrWrite.call(
@@ -118,7 +117,7 @@ export function setupHooks(force: boolean = false): void {
     const originalDenoStdoutWrite = Deno.stdout.write;
     Deno.stdout.write = async (p: Uint8Array): Promise<number> => {
       if (
-        hookState.isHooking || !isPending() || hookState.__DISABLE_HOOKS__ ||
+        hookState.isHooking || !isPending() ||
         !check()
       ) {
         return await originalDenoStdoutWrite.call(Deno.stdout, p);
@@ -135,7 +134,7 @@ export function setupHooks(force: boolean = false): void {
     const originalDenoStdoutWriteSync = Deno.stdout.writeSync;
     Deno.stdout.writeSync = (p: Uint8Array): number => {
       if (
-        hookState.isHooking || !isPending() || hookState.__DISABLE_HOOKS__ ||
+        hookState.isHooking || !isPending() ||
         !check()
       ) {
         return originalDenoStdoutWriteSync.call(Deno.stdout, p);
@@ -152,7 +151,7 @@ export function setupHooks(force: boolean = false): void {
     const originalDenoStderrWrite = Deno.stderr.write;
     Deno.stderr.write = async (p: Uint8Array): Promise<number> => {
       if (
-        hookState.isHooking || !isPending() || hookState.__DISABLE_HOOKS__ ||
+        hookState.isHooking || !isPending() ||
         !check()
       ) {
         return await originalDenoStderrWrite.call(Deno.stderr, p);
@@ -169,7 +168,7 @@ export function setupHooks(force: boolean = false): void {
     const originalDenoStderrWriteSync = Deno.stderr.writeSync;
     Deno.stderr.writeSync = (p: Uint8Array): number => {
       if (
-        hookState.isHooking || !isPending() || hookState.__DISABLE_HOOKS__ ||
+        hookState.isHooking || !isPending() ||
         !check()
       ) {
         return originalDenoStderrWriteSync.call(Deno.stderr, p);
