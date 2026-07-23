@@ -4,7 +4,7 @@ import { delay } from "@std/async/delay";
 import process from "node:process";
 import { createLogUpdate } from "log-update";
 import isInteractive from "is-interactive";
-import { hookState, setupHooks } from "./hook.ts";
+import { flushPendingBuffer, hookState, pendingBuffer, setupHooks } from "./hook.ts";
 
 function show(): void {
   process.stderr.write("\x1B[?25h");
@@ -19,6 +19,7 @@ function cleanup(): void {
   hookState.isHooking = true;
   taskList.length = 0;
   // logu.clear(); // we don't want to remove the print
+  flushPendingBuffer();
   hookState.isHooking = false;
 }
 
@@ -82,7 +83,10 @@ export function clearSettledTasks(): void {
  * Renders the current list of tasks to the terminal.
  */
 export function render(): void {
-  const listString = Task.sprintList();
+  let listString = Task.sprintList();
+  if (pendingBuffer) {
+    listString = pendingBuffer + "\n" + listString;
+  }
   if (listString === "") return;
   if (isInteractive() || process.env.DEBUG) {
     hookState.isHooking = true;
@@ -122,6 +126,7 @@ export async function renderer(): Promise<void> {
     render();
     clearSettledTasks();
   } finally {
+    flushPendingBuffer();
     logu.done();
   }
 }

@@ -21,6 +21,44 @@ export const hookState: HookState = {
   isHooking: false,
 };
 
+export let pendingBuffer = "";
+
+export function clearPendingBuffer(): void {
+  pendingBuffer = "";
+}
+
+/**
+ * Processes a chunk by appending it to the pending buffer.
+ * If there are any complete lines, they are immediately persisted.
+ */
+export function processChunk(chunk: string): void {
+  pendingBuffer += chunk;
+  const lastNewlineIdx = Math.max(
+    pendingBuffer.lastIndexOf("\n"),
+    pendingBuffer.lastIndexOf("\r"),
+  );
+  if (lastNewlineIdx !== -1) {
+    const completedPart = pendingBuffer.slice(0, lastNewlineIdx + 1);
+    pendingBuffer = pendingBuffer.slice(lastNewlineIdx + 1);
+    logu.persist(completedPart);
+  }
+}
+
+/**
+ * Flushes any remaining incomplete text in the pending buffer.
+ */
+export function flushPendingBuffer(): void {
+  if (pendingBuffer.length > 0) {
+    hookState.isHooking = true;
+    try {
+      logu.persist(pendingBuffer);
+      pendingBuffer = "";
+    } finally {
+      hookState.isHooking = false;
+    }
+  }
+}
+
 /**
  * Sets up hooks for stdout and stderr to intercept output and persist it
  * using log-update when tasks are pending.
@@ -44,7 +82,7 @@ export function setupHooks(): void {
       }
       hookState.isHooking = true;
       try {
-        logu.persist(format(...args) + "\n");
+        processChunk(format(...args) + "\n");
       } finally {
         hookState.isHooking = false;
       }
@@ -76,7 +114,7 @@ export function setupHooks(): void {
     }
     hookState.isHooking = true;
     try {
-      logu.persist(chunk.toString());
+      processChunk(chunk.toString());
     } finally {
       hookState.isHooking = false;
     }
@@ -104,7 +142,7 @@ export function setupHooks(): void {
     }
     hookState.isHooking = true;
     try {
-      logu.persist(chunk.toString());
+      processChunk(chunk.toString());
     } finally {
       hookState.isHooking = false;
     }
@@ -124,7 +162,7 @@ export function setupHooks(): void {
       }
       hookState.isHooking = true;
       try {
-        logu.persist(new TextDecoder().decode(p));
+        processChunk(new TextDecoder().decode(p));
       } finally {
         hookState.isHooking = false;
       }
@@ -141,7 +179,7 @@ export function setupHooks(): void {
       }
       hookState.isHooking = true;
       try {
-        logu.persist(new TextDecoder().decode(p));
+        processChunk(new TextDecoder().decode(p));
       } finally {
         hookState.isHooking = false;
       }
@@ -158,7 +196,7 @@ export function setupHooks(): void {
       }
       hookState.isHooking = true;
       try {
-        logu.persist(new TextDecoder().decode(p));
+        processChunk(new TextDecoder().decode(p));
       } finally {
         hookState.isHooking = false;
       }
@@ -175,7 +213,7 @@ export function setupHooks(): void {
       }
       hookState.isHooking = true;
       try {
-        logu.persist(new TextDecoder().decode(p));
+        processChunk(new TextDecoder().decode(p));
       } finally {
         hookState.isHooking = false;
       }
