@@ -440,7 +440,8 @@ export class Task extends EventTarget implements Disposable {
     if (isEnded) {
       showDuration = this.suffixDuration !== false;
     } else if (
-      this.#state === "started" && typeof this.suffixDuration === "bigint"
+      this.#state === "started" && typeof this.suffixDuration === "bigint" &&
+      this.interactive
     ) {
       const d = this.duration;
       if (d !== undefined && d > this.suffixDuration) {

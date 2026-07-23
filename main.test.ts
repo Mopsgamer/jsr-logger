@@ -167,7 +167,7 @@ Deno.test("Task.duration live", async () => {
   await delay(100);
   assertMatch(
     task.sprint(),
-    /\x1b\[35m- TestApp\x1b\[39m Operating ... [µ\w]+/,
+    /\x1b\[35m- TestApp\x1b\[39m Operating .../,
   );
   task.end("completed");
   assertMatch(
@@ -187,7 +187,7 @@ Deno.test("Task.duration live 0n", async () => {
   await delay(1);
   assertMatch(
     task.sprint(),
-    /\x1b\[35m- TestApp\x1b\[39m Operating ... [µ\w]+/,
+    /\x1b\[35m- TestApp\x1b\[39m Operating .../,
   );
   task.end("completed");
   assertMatch(
