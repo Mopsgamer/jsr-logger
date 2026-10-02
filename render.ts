@@ -4,12 +4,7 @@ import { delay } from "@std/async/delay";
 import process from "node:process";
 import { createLogUpdate } from "log-update";
 import isInteractive from "is-interactive";
-import {
-  flushPendingBuffer,
-  hookState,
-  pendingBuffer,
-  setupHooks,
-} from "./hook.ts";
+import { flushPendingBuffer, hookState, pendingBuffer } from "./hook.ts";
 
 function show(): void {
   process.stderr.write("\x1B[?25h");
@@ -42,7 +37,6 @@ process.on("uncaughtException", (err) => {
   show();
   throw err;
 });
-setupHooks();
 
 /**
  * The list of all tasks.
