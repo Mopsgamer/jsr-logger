@@ -8,7 +8,6 @@ import {
   flushPendingBuffer,
   hookState,
   pendingBuffer,
-  setupHooks,
 } from "./hook.ts";
 
 function show(): void {
@@ -42,7 +41,6 @@ process.on("uncaughtException", (err) => {
   show();
   throw err;
 });
-setupHooks();
 
 /**
  * The list of all tasks.

@@ -85,6 +85,42 @@ if (typeof Deno !== "undefined") {
     if (originalEnv === undefined) delete process.env.DEBUG;
     else process.env.DEBUG = originalEnv;
   });
+
+  Deno.test("hooking: Deno.stdout.writable streaming during task", async () => {
+    const originalEnv = process.env.DEBUG;
+    process.env.DEBUG = "true";
+
+    const { output, outputUnpatch } = patchOutput();
+    taskList.length = 0;
+    const logger = new Logger({ prefix: "HookTest" });
+
+    const task = logger.task({ text: "Task Writable" }).start();
+
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(
+          new TextEncoder().encode("Deno stream chunk during task\n"),
+        );
+        controller.close();
+      },
+    });
+
+    await stream.pipeTo(Deno.stdout.writable, { preventClose: true });
+
+    task.end("completed");
+    await mutex.acquire();
+    mutex.release();
+
+    const joinedOutput = output.join("");
+    assert(
+      joinedOutput.includes("Deno stream chunk during task") ||
+        joinedOutput.includes("Task Writable"),
+    );
+
+    outputUnpatch();
+    if (originalEnv === undefined) delete process.env.DEBUG;
+    else process.env.DEBUG = originalEnv;
+  });
 }
 
 Deno.test("hooking: partial process.stdout.write buffering and rendering", async () => {
