@@ -1,7 +1,7 @@
 import process from "node:process";
 import isInteractive from "is-interactive";
 import { format } from "./main.ts";
-import { isPending, logu } from "./render.ts";
+import { isPending, isVisibleTask, logu, taskList } from "./render.ts";
 
 /**
  * State for the hooking mechanism.
@@ -22,6 +22,17 @@ export const hookState: HookState = {
 };
 
 export let pendingBuffer = "";
+
+const streamDecoders = new WeakMap<object, TextDecoder>();
+
+function decodeStreamChunk(stream: object, chunk: Uint8Array): string {
+  let decoder = streamDecoders.get(stream);
+  if (!decoder) {
+    decoder = new TextDecoder();
+    streamDecoders.set(stream, decoder);
+  }
+  return decoder.decode(chunk, { stream: true });
+}
 
 export function clearPendingBuffer(): void {
   pendingBuffer = "";
@@ -60,7 +71,8 @@ export function flushPendingBuffer(): void {
 }
 
 function shouldHook(): boolean {
-  return !hookState.isHooking && isPending() &&
+  return !hookState.isHooking &&
+    (isPending() || (isInteractive() && taskList.some(isVisibleTask))) &&
     (isInteractive() || !!process.env.DEBUG);
 }
 
@@ -119,7 +131,7 @@ function hookDenoSyncStreams(): void {
       }
       hookState.isHooking = true;
       try {
-        processChunk(new TextDecoder().decode(p));
+        processChunk(decodeStreamChunk(stdStream, p));
       } finally {
         hookState.isHooking = false;
       }
@@ -133,7 +145,7 @@ function hookDenoSyncStreams(): void {
       }
       hookState.isHooking = true;
       try {
-        processChunk(new TextDecoder().decode(p));
+        processChunk(decodeStreamChunk(stdStream, p));
       } finally {
         hookState.isHooking = false;
       }
@@ -180,7 +192,7 @@ function hookDenoWritableStreams(): void {
             try {
               const text = typeof chunk === "string"
                 ? chunk
-                : new TextDecoder().decode(chunk);
+                : decodeStreamChunk(streamObj, chunk);
               processChunk(text);
             } finally {
               hookState.isHooking = false;

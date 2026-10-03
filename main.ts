@@ -10,7 +10,7 @@ import {
 } from "@std/fmt/colors";
 import process from "node:process";
 import { formatWithOptions } from "node:util";
-import { isPending, mutex, renderer, taskList } from "./render.ts";
+import { isPending, isVisibleTask, mutex, renderer, taskList } from "./render.ts";
 import isInteractive from "is-interactive";
 import { ns } from "@m234/ns";
 
@@ -319,16 +319,8 @@ export class Task extends EventTarget implements Disposable {
    * @returns A formatted string that ends with a new line if there are any visible tasks.
    */
   static sprintList(): string {
-    const visibleTasks = taskList.filter((task) =>
-      task.#state !== "idle" && task.interactive
-    );
-    let result = "";
-    if (visibleTasks.length > 0) {
-      for (const task of visibleTasks) {
-        result += task.sprint() + "\n";
-      }
-    }
-    return result;
+    return taskList.filter(isVisibleTask).map((task) => task.sprint() + "\n")
+      .join("");
   }
 
   /**

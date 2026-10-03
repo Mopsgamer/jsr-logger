@@ -60,10 +60,11 @@ export function activity(): void {
  * Returns true if there are any tasks that are currently in the "started" state.
  */
 export function isPending(): boolean {
-  const shouldRedraw = taskList.some(
-    (task) => task.state === "started",
-  );
-  return shouldRedraw;
+  return taskList.some((task) => task.state === "started" && !task.logger.disabled);
+}
+
+export function isVisibleTask(task: Task): boolean {
+  return task.state !== "idle" && task.interactive && !task.logger.disabled;
 }
 
 /**

@@ -1,8 +1,9 @@
-import { Logger } from "./main.ts";
-import { assert } from "jsr:@std/assert";
+import { Logger, Task } from "./main.ts";
+import { assert, assertEquals } from "jsr:@std/assert";
 import { patchOutput } from "./output-patcher.ts";
 import { mutex, taskList } from "./render.ts";
 import process from "node:process";
+import { clearPendingBuffer, processChunk } from "./hook.ts";
 
 Deno.test("hooking: console.log during task", async () => {
   const originalEnv = process.env.DEBUG;
@@ -155,6 +156,50 @@ Deno.test("hooking: partial process.stdout.write buffering and rendering", async
   outputUnpatch();
   if (originalEnv === undefined) delete process.env.DEBUG;
   else process.env.DEBUG = originalEnv;
+});
+
+Deno.test("hooking: carriage-return progress is preserved", () => {
+  const { output, outputUnpatch } = patchOutput();
+
+  processChunk("Build step 1\rBuild step 2\n");
+
+  assertEquals(output.join(""), "Build step 1\rBuild step 2\n");
+
+  clearPendingBuffer();
+  outputUnpatch();
+});
+
+Deno.test("hooking: completed visible task remains available to output hook", async () => {
+  const originalTTY = Object.getOwnPropertyDescriptor(process.stdout, "isTTY");
+  Object.defineProperty(process.stdout, "isTTY", {
+    configurable: true,
+    value: true,
+  });
+  try {
+    const { output, outputUnpatch } = patchOutput();
+    try {
+      taskList.length = 0;
+      const logger = new Logger({ prefix: "HookTest" });
+      const task = logger.task({ text: "Task 1" }).start();
+
+      task.end("completed");
+      assert(Task.sprintList() !== "");
+      console.log("Late build output");
+      assert(output.join("").includes("Late build output"));
+
+      await mutex.acquire();
+      mutex.release();
+      assertEquals(Task.sprintList(), "");
+    } finally {
+      outputUnpatch();
+    }
+  } finally {
+    if (originalTTY) {
+      Object.defineProperty(process.stdout, "isTTY", originalTTY);
+    } else {
+      Reflect.deleteProperty(process.stdout, "isTTY");
+    }
+  }
 });
 
 Deno.test("hooking: logger.info during active task is non-blocking", async () => {
